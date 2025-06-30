@@ -119,7 +119,8 @@ app.post('/api/submit', async (req, res) => {
     const now = new Date();
     const formattedTime = now.toLocaleString('en-US', { hour12: false });
     // Compose a public URL to the image for reference
-    const imageUrl = `http://localhost:${PORT}/${uploadPath.replace('\\', '/')}`;
+    const baseUrl = process.env.BASE_URL || `https://admin-site-ze7d.onrender.com`;
+    const imageUrl = `${baseUrl}/${uploadPath.replace('\\', '/')}`;
     // Use the IMAGE formula for Google Sheets
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
