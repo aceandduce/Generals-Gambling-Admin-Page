@@ -49,12 +49,29 @@ function renderForm() {
         <label>Upload Proof of Purchase Here.</label><br />
         <input type="file" id="proofImage" accept="image/*" required /><br />
         <div style="font-size: 0.9em; color: #555;">You can also paste an image from your clipboard.</div>
+        <button type="button" id="exampleBtn" style="margin-top:10px;">Example</button>
         <button type="submit">Submit</button>
         <div id="formError" style="color:red;"></div>
         <div id="formSuccess" style="color:green;"></div>
       </form>
+      <div id="exampleModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:1000;">
+        <div style="background:#fff; padding:24px; border-radius:8px; max-width:90vw; max-height:90vh; text-align:center; position:relative;">
+          <div style="margin-bottom:12px; font-weight:bold;">Here's an example of the proof of purchase, we need the full details of the charge. You can get it on your phone.</div>
+          <img src="https://i.ibb.co/ns7DFSTG/image.png" alt="Example Proof" style="max-width:100%; max-height:60vh; border:1px solid #ccc; border-radius:4px;" />
+          <br />
+          <button id="closeExampleModal" style="margin-top:16px;">Close</button>
+        </div>
+      </div>
     </div>
   `;
+
+  // Modal logic
+  document.getElementById('exampleBtn').onclick = () => {
+    document.getElementById('exampleModal').style.display = 'flex';
+  };
+  document.getElementById('closeExampleModal').onclick = () => {
+    document.getElementById('exampleModal').style.display = 'none';
+  };
 
   // Add paste event to allow clipboard image upload
   const proofImageInput = document.getElementById('proofImage');
