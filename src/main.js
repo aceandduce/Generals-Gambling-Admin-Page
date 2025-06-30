@@ -122,15 +122,17 @@ function renderForm() {
       document.getElementById('formError').innerText = 'Image upload failed.';
       return;
     }
-    // Submit form with image URL
-    const formData = new FormData();
-    formData.append('playerUsername', playerUsername);
-    formData.append('amountToAdd', amountToAdd);
-    formData.append('proofImageUrl', imgbbUrl);
-    formData.append('adminUsername', loggedInUsername);
+    // Submit form with image URL as JSON
+    const payload = {
+      playerUsername,
+      amountToAdd,
+      proofImageUrl: imgbbUrl,
+      adminUsername: loggedInUsername
+    };
     const res = await fetch(`${backendUrl}/api/submit`, {
       method: 'POST',
-      body: formData
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
     if (res.ok) {
       document.getElementById('formSuccess').innerText = 'Submitted successfully!';
