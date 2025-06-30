@@ -97,10 +97,36 @@ function renderForm() {
       document.getElementById('formError').innerText = 'Image required.';
       return;
     }
+    // Upload image to ImgBB first
+    const imgbbApiKey = '321fcbefd94f6d6936d225a7c1004060'; // <-- Replace with your ImgBB API key
+    const imageBase64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(proofImage);
+    });
+    let imgbbUrl = '';
+    try {
+      const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+        method: 'POST',
+        body: new URLSearchParams({ image: imageBase64 })
+      });
+      const imgbbData = await imgbbRes.json();
+      if (imgbbData.success) {
+        imgbbUrl = imgbbData.data.url;
+      } else {
+        document.getElementById('formError').innerText = 'Image upload failed.';
+        return;
+      }
+    } catch (err) {
+      document.getElementById('formError').innerText = 'Image upload failed.';
+      return;
+    }
+    // Submit form with image URL
     const formData = new FormData();
     formData.append('playerUsername', playerUsername);
     formData.append('amountToAdd', amountToAdd);
-    formData.append('proofImage', proofImage);
+    formData.append('proofImageUrl', imgbbUrl);
     formData.append('adminUsername', loggedInUsername);
     const res = await fetch(`${backendUrl}/api/submit`, {
       method: 'POST',

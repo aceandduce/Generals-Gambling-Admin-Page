@@ -1,9 +1,7 @@
 // Simple Express server for login, form handling, and Google Sheets integration
 const express = require('express');
-const fileUpload = require('express-fileupload');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const fs = require('fs');
 const { google } = require('googleapis');
 require('dotenv').config();
 
@@ -15,10 +13,6 @@ const USERS = JSON.parse(process.env.USERS_JSON || '[{"username":"admin","passwo
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(fileUpload());
-
-// Serve uploaded images statically
-app.use('/uploads', express.static('uploads'));
 
 // Login endpoint
 app.post('/api/login', (req, res) => {
@@ -55,10 +49,9 @@ function getSheetsClient() {
 
 // Form submission endpoint
 app.post('/api/submit', async (req, res) => {
-  const { playerUsername, amountToAdd, adminUsername } = req.body;
-  const file = req.files?.proofImage;
+  const { playerUsername, amountToAdd, adminUsername, proofImageUrl } = req.body;
 
-  if (!playerUsername || !amountToAdd || !file || !adminUsername) {
+  if (!playerUsername || !amountToAdd || !proofImageUrl || !adminUsername) {
     return res.status(400).json({ success: false, message: 'All fields required.' });
   }
 
@@ -99,28 +92,11 @@ app.post('/api/submit', async (req, res) => {
         requestBody: { values: [[adminBonus]] },
       });
     }
-    // Save the image (accept any filename)
-    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    const uploadPath = `uploads/${Date.now()}_${safeName}`;
-    fs.mkdirSync('uploads', { recursive: true });
-    await new Promise((resolve, reject) => {
-      file.mv(uploadPath, (err) => {
-        if (err) {
-          console.error('File save error:', err);
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
 
     // Track submission in Admin sheet
     const adminSheetName = 'Admin';
     const now = new Date();
     const formattedTime = now.toLocaleString('en-US', { hour12: false });
-    // Compose a public URL to the image for reference
-    const baseUrl = process.env.BASE_URL || `https://admin-site-ze7d.onrender.com`;
-    const imageUrl = `${baseUrl}/${uploadPath.replace('\\', '/')}`;
     // Use the IMAGE formula for Google Sheets
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
@@ -129,7 +105,7 @@ app.post('/api/submit', async (req, res) => {
       requestBody: {
         values: [[
           formattedTime, // Time
-          `=IMAGE(\"${imageUrl}\")`, // Image formula
+          `=IMAGE("${proofImageUrl}")`, // Image formula
           amountToAdd,    // Amount
           playerUsername, // Player name
           adminUsername   // Admin name
