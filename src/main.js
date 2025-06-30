@@ -56,7 +56,7 @@ function renderForm() {
       </form>
       <div id="exampleModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:1000;">
         <div style="background:#fff; padding:24px; border-radius:8px; max-width:90vw; max-height:90vh; text-align:center; position:relative;">
-          <div style="margin-bottom:12px; font-weight:bold;">Here's an example of the proof of purchase, we need the full details of the charge. You can get it on your phone.</div>
+          <div style="margin-bottom:12px; font-weight:bold; color:#111;">Here's an example of the proof of purchase, we need the full details of the charge. You can get it on your phone.</div>
           <img src="https://i.ibb.co/ns7DFSTG/image.png" alt="Example Proof" style="max-width:100%; max-height:60vh; border:1px solid #ccc; border-radius:4px;" />
           <br />
           <button id="closeExampleModal" style="margin-top:16px;">Close</button>
