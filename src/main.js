@@ -48,7 +48,7 @@ function renderForm() {
         <input type="number" id="amountToAdd" required /><br />
         <label>Upload Proof of Purchase Here.</label><br />
         <input type="file" id="proofImage" accept="image/*" required /><br />
-        <div style="font-size: 0.9em; color: #555;">You can also paste an image from your clipboard.</div>
+        <div style="font-size: 0.9em; color: #fff;">You can also paste an image from your clipboard.</div>
         <button type="button" id="exampleBtn" style="margin-top:10px;">Example</button>
         <button type="submit">Submit</button>
         <div id="formError" style="color:red;"></div>
