@@ -1,4 +1,4 @@
 // Vite config for GitHub Pages deployment
 export default {
-  base: '/AdminSiteGPTTry/', // Change to your repo name if different
+  base: '/Generals-Gambling-Admin-Page/', // Change to your repo name if different
 };
