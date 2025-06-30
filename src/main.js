@@ -3,6 +3,7 @@ import './style.css'
 // Simple state for login
 let loggedIn = false;
 let loggedInUsername = '';
+const backendUrl = 'https://admin-site-ze7d.onrender.com'; // <-- Set your Render backend URL here
 
 function renderLogin() {
   document.querySelector('#app').innerHTML = `
@@ -20,7 +21,7 @@ function renderLogin() {
     e.preventDefault();
     const username = document.getElementById('loginUsername').value;
     const password = document.getElementById('loginPassword').value;
-    const res = await fetch('http://localhost:3001/api/login', {
+    const res = await fetch(`${backendUrl}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
@@ -84,7 +85,7 @@ function renderForm() {
     formData.append('amountToAdd', amountToAdd);
     formData.append('proofImage', proofImage);
     formData.append('adminUsername', loggedInUsername);
-    const res = await fetch('http://localhost:3001/api/submit', {
+    const res = await fetch(`${backendUrl}/api/submit`, {
       method: 'POST',
       body: formData
     });
