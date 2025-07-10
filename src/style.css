@@ -181,7 +181,7 @@ button:focus-visible {
 }
 
 /* Back Button */
-.form-container .back-button {
+.form-container button.back-button {
   padding: 0.5rem 1rem !important;
   background: #666 !important;
   color: #fff !important;
@@ -196,7 +196,7 @@ button:focus-visible {
   display: block !important;
 }
 
-.form-container .back-button:hover {
+.form-container button.back-button:hover {
   background: #555 !important;
 }
 
