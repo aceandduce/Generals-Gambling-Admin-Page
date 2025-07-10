@@ -393,15 +393,23 @@ function getMarketDisplayName(marketKey) {
 }
 
 function toggleEventCard(index) {
+  console.log('Toggle called for index:', index);
   const content = document.getElementById(`event-content-${index}`);
   const eventCard = content.closest('.event-card');
   
+  console.log('Content element:', content);
+  console.log('Current display style:', content.style.display);
+  
   if (content.style.display === 'none') {
+    // Expand
     content.style.display = 'block';
     eventCard.classList.remove('collapsed');
+    console.log('Expanding card');
   } else {
+    // Collapse
     content.style.display = 'none';
     eventCard.classList.add('collapsed');
+    console.log('Collapsing card');
   }
 }
 
