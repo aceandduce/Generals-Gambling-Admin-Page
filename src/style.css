@@ -192,7 +192,8 @@ button:focus-visible {
   transition: background 0.3s ease;
   white-space: nowrap;
   margin-bottom: 1rem;
-  align-self: flex-start;
+  width: auto !important;
+  display: inline-block;
 }
 
 .back-button:hover {
