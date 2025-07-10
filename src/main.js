@@ -73,13 +73,15 @@ function renderMainMenu() {
 function renderSportsBets() {
   document.querySelector('#app').innerHTML = `
     <div class="form-container">
-      <div style="text-align: left;">
-        <button id="backToMenuBtn" class="back-button" style="display: block; width: auto; margin-bottom: 1rem;">← Back to Menu</button>
-      </div>
-      <h2>Take Sports Bets</h2>
-      <div class="coming-soon">
-        <h3>Coming Soon!</h3>
-        <p>This feature is under development. Check back soon!</p>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="align-self: flex-start; margin-bottom: 1rem;">
+          <button id="backToMenuBtn" class="back-button">← Back to Menu</button>
+        </div>
+        <h2>Take Sports Bets</h2>
+        <div class="coming-soon">
+          <h3>Coming Soon!</h3>
+          <p>This feature is under development. Check back soon!</p>
+        </div>
       </div>
     </div>
   `;
@@ -93,11 +95,12 @@ function renderSportsBets() {
 function renderForm() {
   document.querySelector('#app').innerHTML = `
     <div class="form-container">
-      <div style="text-align: left;">
-        <button id="backToMenuBtn" class="back-button" style="display: block; width: auto; margin-bottom: 1rem;">← Back to Menu</button>
-      </div>
-      <h2>Submit Player Data</h2>
-      <form id="playerForm">
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="align-self: flex-start; margin-bottom: 1rem;">
+          <button id="backToMenuBtn" class="back-button">← Back to Menu</button>
+        </div>
+        <h2>Submit Player Data</h2>
+        <form id="playerForm">
         <label>Username of Player</label><br />
         <input type="text" id="playerUsername" required /><br />
         <label>Amount to Add</label><br />
