@@ -180,20 +180,7 @@ button:focus-visible {
   background: #c82333;
 }
 
-/* Header with Back Button */
-.header-with-back {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
-}
-
-.header-with-back h2 {
-  margin: 0;
-  flex: 1;
-  text-align: center;
-}
-
+/* Back Button */
 .back-button {
   padding: 0.5rem 1rem;
   background: #666;
@@ -204,6 +191,8 @@ button:focus-visible {
   cursor: pointer;
   transition: background 0.3s ease;
   white-space: nowrap;
+  margin-bottom: 1rem;
+  align-self: flex-start;
 }
 
 .back-button:hover {
