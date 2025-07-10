@@ -73,8 +73,8 @@ function renderMainMenu() {
 function renderSportsBets() {
   document.querySelector('#app').innerHTML = `
     <div class="form-container">
-      <div style="display: flex; flex-direction: column; align-items: center;">
-        <button id="backToMenuBtn" class="back-button" style="margin-bottom: 1rem;">← Back to Menu</button>
+      <div class="page-layout">
+        <button id="backToMenuBtn" class="back-button">← Back to Menu</button>
         <h2>Take Sports Bets</h2>
         <div class="coming-soon">
           <h3>Coming Soon!</h3>
@@ -93,8 +93,8 @@ function renderSportsBets() {
 function renderForm() {
   document.querySelector('#app').innerHTML = `
     <div class="form-container">
-      <div style="display: flex; flex-direction: column; align-items: center;">
-        <button id="backToMenuBtn" class="back-button" style="margin-bottom: 1rem;">← Back to Menu</button>
+      <div class="page-layout">
+        <button id="backToMenuBtn" class="back-button">← Back to Menu</button>
         <h2>Submit Player Data</h2>
         <form id="playerForm">
         <label>Username of Player</label><br />
