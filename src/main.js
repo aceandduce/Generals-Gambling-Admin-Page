@@ -72,9 +72,9 @@ function renderMainMenu() {
 
 function renderSportsBets() {
   document.querySelector('#app').innerHTML = `
-    <div class="form-container">
-      <div style="display: flex !important; flex-direction: column !important; align-items: center !important;">
-        <button id="backToMenuBtn" class="back-button" style="display: block !important; width: auto !important; margin-bottom: 1rem !important;">← Back to Menu</button>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+      <button id="backToMenuBtn" style="padding: 0.5rem 1rem; background: #666; color: #fff; border: none; border-radius: 5px; font-size: 0.9rem; cursor: pointer; width: auto;">← Back to Menu</button>
+      <div class="form-container">
         <h2>Take Sports Bets</h2>
         <div class="coming-soon">
           <h3>Coming Soon!</h3>
@@ -92,9 +92,9 @@ function renderSportsBets() {
 
 function renderForm() {
   document.querySelector('#app').innerHTML = `
-    <div class="form-container">
-      <div style="display: flex !important; flex-direction: column !important; align-items: center !important;">
-        <button id="backToMenuBtn" class="back-button" style="display: block !important; width: auto !important; margin-bottom: 1rem !important;">← Back to Menu</button>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+      <button id="backToMenuBtn" style="padding: 0.5rem 1rem; background: #666; color: #fff; border: none; border-radius: 5px; font-size: 0.9rem; cursor: pointer; width: auto;">← Back to Menu</button>
+      <div class="form-container">
         <h2>Submit Player Data</h2>
         <form id="playerForm">
         <label>Username of Player</label><br />
