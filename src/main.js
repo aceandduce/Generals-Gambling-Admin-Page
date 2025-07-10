@@ -375,14 +375,20 @@ function displayOdds(sportData) {
   
   oddsContainer.innerHTML = html;
 
-  // Add event listeners for collapsible cards
+  // Add event listeners for collapsible cards and set initial collapsed state
   sportData.events.forEach((event, index) => {
     const card = document.getElementById(`event-card-${index}`);
-    if (card) {
+    const content = document.getElementById(`event-content-${index}`);
+    
+    if (card && content) {
+      // Set initial collapsed state
+      content.style.display = 'none';
+      card.classList.add('collapsed');
+      
       card.addEventListener('click', function (e) {
         // Prevent toggling if clicking inside the event-content (e.g., on a table)
         if (e.target.closest('.event-content')) return;
-        const content = document.getElementById(`event-content-${index}`);
+        
         if (content.style.display === 'none') {
           content.style.display = 'block';
           card.classList.remove('collapsed');
