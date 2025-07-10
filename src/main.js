@@ -316,7 +316,7 @@ function displayOdds(sportData) {
     const eventDate = new Date(event.commence_time).toLocaleString();
     
     html += `
-      <div class="event-card" onclick="toggleEventCard(${index})">
+      <div class="event-card" id="event-card-${index}">
         <div class="event-header">
           <h4>${event.away_team} @ ${event.home_team}</h4>
           <p class="event-time">${eventDate}</p>
@@ -374,6 +374,25 @@ function displayOdds(sportData) {
   });
   
   oddsContainer.innerHTML = html;
+
+  // Add event listeners for collapsible cards
+  sportData.events.forEach((event, index) => {
+    const card = document.getElementById(`event-card-${index}`);
+    if (card) {
+      card.addEventListener('click', function (e) {
+        // Prevent toggling if clicking inside the event-content (e.g., on a table)
+        if (e.target.closest('.event-content')) return;
+        const content = document.getElementById(`event-content-${index}`);
+        if (content.style.display === 'none') {
+          content.style.display = 'block';
+          card.classList.remove('collapsed');
+        } else {
+          content.style.display = 'none';
+          card.classList.add('collapsed');
+        }
+      });
+    }
+  });
 }
 
 function calculateAdjustedOdds(originalOdds) {
@@ -392,7 +411,8 @@ function getMarketDisplayName(marketKey) {
   return marketNames[marketKey] || marketKey;
 }
 
-function toggleEventCard(index) {
+// Make toggleEventCard globally accessible
+window.toggleEventCard = function(index) {
   console.log('Toggle called for index:', index);
   const content = document.getElementById(`event-content-${index}`);
   const eventCard = content.closest('.event-card');
