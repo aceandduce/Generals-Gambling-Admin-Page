@@ -85,9 +85,9 @@
               </tr>
             </thead>
             <tbody>
-      `,a.markets.forEach(d=>{d.outcomes.forEach(l=>{const c=l.price,i=w(c);r+=`
+      `,a.markets.forEach(d=>{d.outcomes.forEach(l=>{const c=l.price,i=L(c);r+=`
             <tr>
-              <td>${L(d.key)}</td>
+              <td>${w(d.key)}</td>
               <td>${l.name}</td>
               <td>${c.toFixed(2)}</td>
               <td class="adjusted-odds">${i.toFixed(2)}</td>
@@ -101,4 +101,4 @@
           </div>
         </div>
       </div>
-    `}),o.innerHTML=r,t.events.forEach((s,e)=>{const n=document.getElementById(`event-card-${e}`);n&&n.addEventListener("click",function(a){if(a.target.closest(".event-content"))return;const d=document.getElementById(`event-content-${e}`);d.style.display==="none"?(d.style.display="block",n.classList.remove("collapsed")):(d.style.display="none",n.classList.add("collapsed"))})})}function w(t){const o=t*.8;return Math.max(o,1.01)}function L(t){return{h2h:"Moneyline",spreads:"Spread",totals:"Total"}[t]||t}window.toggleEventCard=function(t){console.log("Toggle called for index:",t);const o=document.getElementById(`event-content-${t}`),r=o.closest(".event-card");console.log("Content element:",o),console.log("Current display style:",o.style.display),o.style.display==="none"?(o.style.display="block",r.classList.remove("collapsed"),console.log("Expanding card")):(o.style.display="none",r.classList.add("collapsed"),console.log("Collapsing card"))};g?f():v();
+    `}),o.innerHTML=r,t.events.forEach((s,e)=>{const n=document.getElementById(`event-card-${e}`),a=document.getElementById(`event-content-${e}`);n&&a&&(a.style.display="none",n.classList.add("collapsed"),n.addEventListener("click",function(d){d.target.closest(".event-content")||(a.style.display==="none"?(a.style.display="block",n.classList.remove("collapsed")):(a.style.display="none",n.classList.add("collapsed")))}))})}function L(t){const o=t*.8;return Math.max(o,1.01)}function w(t){return{h2h:"Moneyline",spreads:"Spread",totals:"Total"}[t]||t}window.toggleEventCard=function(t){console.log("Toggle called for index:",t);const o=document.getElementById(`event-content-${t}`),r=o.closest(".event-card");console.log("Content element:",o),console.log("Current display style:",o.style.display),o.style.display==="none"?(o.style.display="block",r.classList.remove("collapsed"),console.log("Expanding card")):(o.style.display="none",r.classList.add("collapsed"),console.log("Collapsing card"))};g?f():v();
