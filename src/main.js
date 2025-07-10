@@ -3,6 +3,7 @@ import './style.css'
 // Simple state for login
 let loggedIn = false;
 let loggedInUsername = '';
+let currentPage = 'menu'; // 'menu', 'addFunds', 'sportsBets'
 const backendUrl = 'https://admin-site-ze7d.onrender.com'; // <-- Set your Render backend URL here
 
 function renderLogin() {
@@ -29,7 +30,8 @@ function renderLogin() {
     if (res.ok) {
       loggedIn = true;
       loggedInUsername = username;
-      renderForm();
+      currentPage = 'menu';
+      renderMainMenu();
     } else {
       const data = await res.json();
       document.getElementById('loginError').innerText = data.message || 'Login failed';
@@ -37,10 +39,64 @@ function renderLogin() {
   };
 }
 
+function renderMainMenu() {
+  document.querySelector('#app').innerHTML = `
+    <div class="menu-container">
+      <h2>Admin Dashboard</h2>
+      <p>Welcome, ${loggedInUsername}!</p>
+      <div class="menu-buttons">
+        <button id="addFundsBtn" class="menu-button">Add Funds</button>
+        <button id="sportsBetsBtn" class="menu-button">Take Sports Bets</button>
+      </div>
+      <button id="logoutBtn" class="logout-button">Logout</button>
+    </div>
+  `;
+
+  document.getElementById('addFundsBtn').onclick = () => {
+    currentPage = 'addFunds';
+    renderForm();
+  };
+
+  document.getElementById('sportsBetsBtn').onclick = () => {
+    currentPage = 'sportsBets';
+    renderSportsBets();
+  };
+
+  document.getElementById('logoutBtn').onclick = () => {
+    loggedIn = false;
+    loggedInUsername = '';
+    currentPage = 'menu';
+    renderLogin();
+  };
+}
+
+function renderSportsBets() {
+  document.querySelector('#app').innerHTML = `
+    <div class="form-container">
+      <div class="header-with-back">
+        <button id="backToMenuBtn" class="back-button">← Back to Menu</button>
+        <h2>Take Sports Bets</h2>
+      </div>
+      <div class="coming-soon">
+        <h3>Coming Soon!</h3>
+        <p>This feature is under development. Check back soon!</p>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('backToMenuBtn').onclick = () => {
+    currentPage = 'menu';
+    renderMainMenu();
+  };
+}
+
 function renderForm() {
   document.querySelector('#app').innerHTML = `
     <div class="form-container">
-      <h2>Submit Player Data</h2>
+      <div class="header-with-back">
+        <button id="backToMenuBtn" class="back-button">← Back to Menu</button>
+        <h2>Submit Player Data</h2>
+      </div>
       <form id="playerForm">
         <label>Username of Player</label><br />
         <input type="text" id="playerUsername" required /><br />
@@ -71,6 +127,12 @@ function renderForm() {
   };
   document.getElementById('closeExampleModal').onclick = () => {
     document.getElementById('exampleModal').style.display = 'none';
+  };
+
+  // Back to menu button
+  document.getElementById('backToMenuBtn').onclick = () => {
+    currentPage = 'menu';
+    renderMainMenu();
   };
 
   // Add paste event to allow clipboard image upload
@@ -149,5 +211,5 @@ function renderForm() {
 if (!loggedIn) {
   renderLogin();
 } else {
-  renderForm();
+  renderMainMenu();
 }

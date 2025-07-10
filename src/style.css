@@ -82,17 +82,19 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-.login-container, .form-container {
+.login-container, .form-container, .menu-container {
   background: #222;
   padding: 2rem 2.5rem;
   border-radius: 10px;
   box-shadow: 0 2px 16px #0008;
-  max-width: 350px;
+  max-width: 400px;
   margin: 2rem auto;
 }
-.login-container h2, .form-container h2 {
+
+.login-container h2, .form-container h2, .menu-container h2 {
   margin-bottom: 1rem;
 }
+
 .login-container input, .form-container input {
   width: 100%;
   margin-bottom: 1rem;
@@ -102,6 +104,7 @@ button:focus-visible {
   background: #333;
   color: #fff;
 }
+
 .login-container button, .form-container button {
   width: 100%;
   padding: 0.7rem;
@@ -113,12 +116,116 @@ button:focus-visible {
   cursor: pointer;
   margin-bottom: 1rem;
 }
+
 .login-container button:hover, .form-container button:hover {
   background: #535bf2;
 }
+
 #formError, #formSuccess, #loginError {
   margin-top: 0.5rem;
   min-height: 1.2em;
+}
+
+/* Main Menu Styles */
+.menu-container {
+  text-align: center;
+}
+
+.menu-container p {
+  margin-bottom: 2rem;
+  color: #ccc;
+  font-size: 1.1em;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.menu-button {
+  width: 100%;
+  padding: 1rem;
+  background: #646cff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(100, 108, 255, 0.3);
+}
+
+.menu-button:hover {
+  background: #535bf2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.4);
+}
+
+.logout-button {
+  width: 100%;
+  padding: 0.7rem;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.logout-button:hover {
+  background: #c82333;
+}
+
+/* Header with Back Button */
+.header-with-back {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.header-with-back h2 {
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  background: #666;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  white-space: nowrap;
+}
+
+.back-button:hover {
+  background: #555;
+}
+
+/* Coming Soon Page */
+.coming-soon {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.coming-soon h3 {
+  color: #646cff;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.coming-soon p {
+  color: #ccc;
+  font-size: 1.1rem;
+  line-height: 1.6;
 }
 
 @media (prefers-color-scheme: light) {
