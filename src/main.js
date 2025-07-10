@@ -6,6 +6,10 @@ let loggedInUsername = '';
 let currentPage = 'menu'; // 'menu', 'addFunds', 'sportsBets'
 const backendUrl = 'https://admin-site-ze7d.onrender.com'; // <-- Set your Render backend URL here
 
+// The Odds API Configuration
+const ODDS_API_KEY = 'df860f2526805007d06289b53d901e26'; // <-- Replace with your Odds API key
+const ODDS_API_BASE_URL = 'https://api.the-odds-api.com/v4';
+
 function renderLogin() {
   document.querySelector('#app').innerHTML = `
     <div class="login-container">
@@ -75,10 +79,17 @@ function renderSportsBets() {
     <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
       <button id="backToMenuBtn" style="padding: 0.5rem 1rem; background: #666; color: #fff; border: none; border-radius: 5px; font-size: 0.9rem; cursor: pointer; width: auto;">← Back to Menu</button>
       <div class="form-container">
-        <h2>Take Sports Bets</h2>
-        <div class="coming-soon">
-          <h3>Coming Soon!</h3>
-          <p>This feature is under development. Check back soon!</p>
+        <h2>Sports Betting</h2>
+        <div class="sports-betting-container">
+          <div class="sport-selector">
+            <label for="sportSelect">Select Sport:</label>
+            <select id="sportSelect">
+              <option value="">Loading sports...</option>
+            </select>
+          </div>
+          <div id="oddsContainer" class="odds-container">
+            <p>Select a sport to view available odds</p>
+          </div>
         </div>
       </div>
     </div>
@@ -88,6 +99,19 @@ function renderSportsBets() {
     currentPage = 'menu';
     renderMainMenu();
   };
+
+  // Load sports list
+  loadSportsList();
+  
+  // Add event listener for sport selection
+  document.getElementById('sportSelect').addEventListener('change', function() {
+    const selectedSport = this.value;
+    if (selectedSport) {
+      loadOddsForSport(selectedSport);
+    } else {
+      document.getElementById('oddsContainer').innerHTML = '<p>Select a sport to view available odds</p>';
+    }
+  });
 }
 
 function renderForm() {
@@ -205,6 +229,151 @@ function renderForm() {
       document.getElementById('formSuccess').innerText = '';
     }
   };
+}
+
+// Sports betting functions
+async function loadSportsList() {
+  try {
+    const response = await fetch(`${ODDS_API_BASE_URL}/sports?apiKey=${ODDS_API_KEY}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const sports = await response.json();
+    
+    const select = document.getElementById('sportSelect');
+    select.innerHTML = '<option value="">Select a sport...</option>';
+    
+    // Filter for active sports and sort by group
+    const activeSports = sports.filter(sport => sport.active).sort((a, b) => {
+      if (a.group === b.group) {
+        return a.title.localeCompare(b.title);
+      }
+      return a.group.localeCompare(b.group);
+    });
+    
+    activeSports.forEach(sport => {
+      const option = document.createElement('option');
+      option.value = sport.key;
+      option.textContent = `${sport.group} - ${sport.title}`;
+      select.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Error loading sports:', error);
+    document.getElementById('sportSelect').innerHTML = '<option value="">Error loading sports</option>';
+  }
+}
+
+async function loadOddsForSport(sportKey) {
+  const oddsContainer = document.getElementById('oddsContainer');
+  oddsContainer.innerHTML = '<p>Loading odds...</p>';
+  
+  try {
+    const response = await fetch(`${ODDS_API_BASE_URL}/sports/${sportKey}/odds?regions=us&oddsFormat=decimal&markets=h2h,spreads,totals&apiKey=${ODDS_API_KEY}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const oddsData = await response.json();
+    // Transform the API response to match our display format
+    const transformedData = {
+      title: getSportTitle(sportKey),
+      events: oddsData
+    };
+    displayOdds(transformedData);
+  } catch (error) {
+    console.error('Error loading odds:', error);
+    oddsContainer.innerHTML = '<p>Error loading odds. Please try again.</p>';
+  }
+}
+
+function getSportTitle(sportKey) {
+  const sportTitles = {
+    'americanfootball_nfl': 'NFL',
+    'americanfootball_ncaaf': 'NCAAF',
+    'basketball_nba': 'NBA',
+    'basketball_wnba': 'WNBA',
+    'baseball_mlb': 'MLB',
+    'icehockey_nhl': 'NHL',
+    'soccer_epl': 'EPL',
+    'soccer_usa_mls': 'MLS',
+    'mma_mixed_martial_arts': 'MMA'
+  };
+  return sportTitles[sportKey] || sportKey;
+}
+
+function displayOdds(sportData) {
+  const oddsContainer = document.getElementById('oddsContainer');
+  
+  if (!sportData.events || sportData.events.length === 0) {
+    oddsContainer.innerHTML = '<p>No events available for this sport at the moment.</p>';
+    return;
+  }
+  
+  let html = `<h3>${sportData.title} - Upcoming Games</h3>`;
+  
+  sportData.events.forEach(event => {
+    const eventDate = new Date(event.commence_time).toLocaleString();
+    
+    html += `
+      <div class="event-card">
+        <h4>${event.away_team} @ ${event.home_team}</h4>
+        <p class="event-time">${eventDate}</p>
+        <div class="odds-tables">
+    `;
+    
+    event.bookmakers.forEach(bookmaker => {
+      html += `
+        <div class="bookmaker-section">
+          <h5>${bookmaker.title}</h5>
+          <table class="odds-table">
+            <thead>
+              <tr>
+                <th>Bet Type</th>
+                <th>Selection</th>
+                <th>Odds</th>
+                <th>Line</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      
+      bookmaker.markets.forEach(market => {
+        market.outcomes.forEach(outcome => {
+          html += `
+            <tr>
+              <td>${getMarketDisplayName(market.key)}</td>
+              <td>${outcome.name}</td>
+              <td>${outcome.price}</td>
+              <td>${outcome.point ? outcome.point : '-'}</td>
+            </tr>
+          `;
+        });
+      });
+      
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+    });
+    
+    html += `
+        </div>
+      </div>
+    `;
+  });
+  
+  oddsContainer.innerHTML = html;
+}
+
+function getMarketDisplayName(marketKey) {
+  const marketNames = {
+    'h2h': 'Moneyline',
+    'spreads': 'Spread',
+    'totals': 'Total'
+  };
+  return marketNames[marketKey] || marketKey;
 }
 
 if (!loggedIn) {

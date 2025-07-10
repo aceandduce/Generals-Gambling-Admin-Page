@@ -213,6 +213,107 @@ button:focus-visible {
   display: block !important;
 }
 
+/* Sports Betting Styles */
+.sports-betting-container {
+  width: 100%;
+  max-width: 800px;
+}
+
+.sport-selector {
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.sport-selector label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.sport-selector select {
+  width: 100%;
+  padding: 0.7rem;
+  border-radius: 5px;
+  border: 1px solid #444;
+  background: #333;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.odds-container {
+  text-align: left;
+}
+
+.odds-container h3 {
+  color: #646cff;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.event-card {
+  background: #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #444;
+}
+
+.event-card h4 {
+  color: #fff;
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.event-time {
+  color: #ccc;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.odds-tables {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.bookmaker-section h5 {
+  color: #646cff;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.odds-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #222;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.odds-table th {
+  background: #444;
+  color: #fff;
+  padding: 0.8rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid #555;
+}
+
+.odds-table td {
+  padding: 0.8rem;
+  color: #fff;
+  border-bottom: 1px solid #333;
+}
+
+.odds-table tr:hover {
+  background: #2a2a2a;
+}
+
+.odds-table tr:last-child td {
+  border-bottom: none;
+}
+
 /* Coming Soon Page */
 .coming-soon {
   text-align: center;
