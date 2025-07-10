@@ -312,14 +312,17 @@ function displayOdds(sportData) {
   
   let html = `<h3>${sportData.title} - Upcoming Games</h3>`;
   
-  sportData.events.forEach(event => {
+  sportData.events.forEach((event, index) => {
     const eventDate = new Date(event.commence_time).toLocaleString();
     
     html += `
-      <div class="event-card">
-        <h4>${event.away_team} @ ${event.home_team}</h4>
-        <p class="event-time">${eventDate}</p>
-        <div class="odds-tables">
+      <div class="event-card" onclick="toggleEventCard(${index})">
+        <div class="event-header">
+          <h4>${event.away_team} @ ${event.home_team}</h4>
+          <p class="event-time">${eventDate}</p>
+        </div>
+        <div class="event-content" id="event-content-${index}">
+          <div class="odds-tables">
     `;
     
     event.bookmakers.forEach(bookmaker => {
@@ -364,6 +367,7 @@ function displayOdds(sportData) {
     });
     
     html += `
+          </div>
         </div>
       </div>
     `;
@@ -373,9 +377,10 @@ function displayOdds(sportData) {
 }
 
 function calculateAdjustedOdds(originalOdds) {
-  // Apply 20% vig reduction
+  // Apply 20% vig reduction with minimum of 1.01
   // Formula: adjusted_odds = original_odds * (1 - 0.20)
-  return originalOdds * 0.8;
+  const adjustedOdds = originalOdds * 0.8;
+  return Math.max(adjustedOdds, 1.01);
 }
 
 function getMarketDisplayName(marketKey) {
@@ -385,6 +390,19 @@ function getMarketDisplayName(marketKey) {
     'totals': 'Total'
   };
   return marketNames[marketKey] || marketKey;
+}
+
+function toggleEventCard(index) {
+  const content = document.getElementById(`event-content-${index}`);
+  const eventCard = content.closest('.event-card');
+  
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    eventCard.classList.remove('collapsed');
+  } else {
+    content.style.display = 'none';
+    eventCard.classList.add('collapsed');
+  }
 }
 
 if (!loggedIn) {
