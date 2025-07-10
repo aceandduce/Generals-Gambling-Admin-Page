@@ -314,6 +314,11 @@ button:focus-visible {
   border-bottom: none;
 }
 
+.adjusted-odds {
+  color: #646cff !important;
+  font-weight: 600;
+}
+
 /* Coming Soon Page */
 .coming-soon {
   text-align: center;

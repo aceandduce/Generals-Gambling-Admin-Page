@@ -331,7 +331,8 @@ function displayOdds(sportData) {
               <tr>
                 <th>Bet Type</th>
                 <th>Selection</th>
-                <th>Odds</th>
+                <th>Original Odds</th>
+                <th>Your Odds (20% vig)</th>
                 <th>Line</th>
               </tr>
             </thead>
@@ -340,11 +341,15 @@ function displayOdds(sportData) {
       
       bookmaker.markets.forEach(market => {
         market.outcomes.forEach(outcome => {
+          const originalOdds = outcome.price;
+          const adjustedOdds = calculateAdjustedOdds(originalOdds);
+          
           html += `
             <tr>
               <td>${getMarketDisplayName(market.key)}</td>
               <td>${outcome.name}</td>
-              <td>${outcome.price}</td>
+              <td>${originalOdds.toFixed(2)}</td>
+              <td class="adjusted-odds">${adjustedOdds.toFixed(2)}</td>
               <td>${outcome.point ? outcome.point : '-'}</td>
             </tr>
           `;
@@ -365,6 +370,12 @@ function displayOdds(sportData) {
   });
   
   oddsContainer.innerHTML = html;
+}
+
+function calculateAdjustedOdds(originalOdds) {
+  // Apply 20% vig reduction
+  // Formula: adjusted_odds = original_odds * (1 - 0.20)
+  return originalOdds * 0.8;
 }
 
 function getMarketDisplayName(marketKey) {
