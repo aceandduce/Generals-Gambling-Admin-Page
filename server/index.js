@@ -157,7 +157,7 @@ app.post('/api/submit-sports-bet', async (req, res) => {
     // Append bet data to Sports Bets sheet
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
-      range: `${sportsBetsSheetName}!A:J`,
+      range: `${sportsBetsSheetName}!A:K`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[
@@ -170,6 +170,7 @@ app.post('/api/submit-sports-bet', async (req, res) => {
           betType,          // Bet Type (Moneyline, Spread, Total)
           odds,             // Odds
           line || '',       // Line (for spreads/totals)
+          adminUsername,    // Admin who processed the bet
           `=IMAGE("${proofImageUrl}")` // Proof Image
         ]]
       }
