@@ -19,6 +19,7 @@ function renderLogin() {
         <input type="password" id="loginPassword" placeholder="Password" required /><br />
         <button type="submit">Login</button>
         <div id="loginError" style="color:red;"></div>
+        <div id="loginLoading" style="color:red; display:none;">Loading... May take upwards of a minute.</div>
       </form>
     </div>
   `;
@@ -26,19 +27,30 @@ function renderLogin() {
     e.preventDefault();
     const username = document.getElementById('loginUsername').value;
     const password = document.getElementById('loginPassword').value;
-    const res = await fetch(`${backendUrl}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    if (res.ok) {
-      loggedIn = true;
-      loggedInUsername = username;
-      currentPage = 'menu';
-      renderMainMenu();
-    } else {
-      const data = await res.json();
-      document.getElementById('loginError').innerText = data.message || 'Login failed';
+    
+    // Show loading state
+    document.getElementById('loginLoading').style.display = 'block';
+    document.getElementById('loginError').innerText = '';
+    
+    try {
+      const res = await fetch(`${backendUrl}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      if (res.ok) {
+        loggedIn = true;
+        loggedInUsername = username;
+        currentPage = 'menu';
+        renderMainMenu();
+      } else {
+        const data = await res.json();
+        document.getElementById('loginError').innerText = data.message || 'Login failed';
+      }
+    } catch (error) {
+      document.getElementById('loginError').innerText = 'Connection failed. Please try again.';
+    } finally {
+      document.getElementById('loginLoading').style.display = 'none';
     }
   };
 }
@@ -584,6 +596,10 @@ async function handleBettingFormSubmit(e) {
     return;
   }
   
+  // Show loading state
+  document.getElementById('bettingSuccess').textContent = 'Processing... Please wait.';
+  document.getElementById('bettingError').textContent = '';
+  
   // Upload image to ImgBB
   const imgbbApiKey = '321fcbefd94f6d6936d225a7c1004060';
   const imageBase64 = await new Promise((resolve, reject) => {
@@ -604,10 +620,12 @@ async function handleBettingFormSubmit(e) {
       imgbbUrl = imgbbData.data.url;
     } else {
       document.getElementById('bettingError').textContent = 'Image upload failed.';
+      document.getElementById('bettingSuccess').textContent = '';
       return;
     }
   } catch (err) {
     document.getElementById('bettingError').textContent = 'Image upload failed.';
+    document.getElementById('bettingSuccess').textContent = '';
     return;
   }
   
@@ -633,19 +651,19 @@ async function handleBettingFormSubmit(e) {
     });
     
     if (res.ok) {
-      document.getElementById('bettingSuccess').textContent = 'Bet placed successfully!';
+      document.getElementById('bettingSuccess').textContent = '✅ Bet submitted successfully! Data saved to Google Sheets.';
       document.getElementById('bettingError').textContent = '';
       document.getElementById('bettingForm').reset();
       setTimeout(() => {
         closeBettingModal();
-      }, 2000);
+      }, 3000);
     } else {
       const data = await res.json();
       document.getElementById('bettingError').textContent = data.message || 'Failed to place bet.';
       document.getElementById('bettingSuccess').textContent = '';
     }
   } catch (err) {
-    document.getElementById('bettingError').textContent = 'Failed to place bet.';
+    document.getElementById('bettingError').textContent = 'Connection failed. Please try again.';
     document.getElementById('bettingSuccess').textContent = '';
   }
 }
