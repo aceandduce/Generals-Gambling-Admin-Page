@@ -119,6 +119,57 @@ app.post('/api/submit', async (req, res) => {
   }
 });
 
+// Sports betting submission endpoint
+app.post('/api/submit-sports-bet', async (req, res) => {
+  const { 
+    username, 
+    bank, 
+    amount, 
+    team, 
+    sport, 
+    event, 
+    betType, 
+    odds, 
+    proofImageUrl 
+  } = req.body;
+
+  if (!username || !bank || !amount || !team || !sport || !event || !betType || !odds || !proofImageUrl) {
+    return res.status(400).json({ success: false, message: 'All fields required.' });
+  }
+
+  try {
+    const sheets = getSheetsClient();
+    const sportsBetsSheetName = 'Sports Bets';
+    const now = new Date();
+    const formattedTime = now.toLocaleString('en-US', { hour12: false });
+
+    // Append bet data to Sports Bets sheet
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: `${sportsBetsSheetName}!A:I`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[
+          formattedTime,    // Time
+          username,         // Username
+          bank,            // Bank
+          amount,          // Amount
+          team,            // Team
+          sport,           // Sport
+          event,           // Event
+          betType,         // Bet Type (h2h, spreads, totals)
+          `=IMAGE("${proofImageUrl}")` // Proof Image
+        ]]
+      }
+    });
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Error in /api/submit-sports-bet:', err);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
