@@ -11,7 +11,17 @@ const PORT = 3001;
 // Simple in-memory user store (replace with DB for production)
 const USERS = JSON.parse(process.env.USERS_JSON || '[{"username":"admin","password":"password123"},{"username":"General Supreme","password":"password"}]');
 
-app.use(cors());
+// Configure CORS to allow requests from GitHub Pages
+app.use(cors({
+  origin: [
+    'https://aceandduce.github.io',
+    'http://localhost:5173', // For local development
+    'http://localhost:3000'  // For local development
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(bodyParser.json());
 
 // Login endpoint
