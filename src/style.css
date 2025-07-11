@@ -341,6 +341,16 @@ button:focus-visible {
   font-weight: 600;
 }
 
+.betting-cell {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.betting-cell:hover {
+  background-color: #646cff !important;
+  color: #fff !important;
+}
+
 /* Coming Soon Page */
 .coming-soon {
   text-align: center;
