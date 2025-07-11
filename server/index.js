@@ -123,17 +123,18 @@ app.post('/api/submit', async (req, res) => {
 app.post('/api/submit-sports-bet', async (req, res) => {
   const { 
     username, 
-    bank, 
-    amount, 
-    team, 
-    sport, 
-    event, 
+    amountBet, 
+    eventName, 
+    eventTime, 
     betType, 
+    selectedTeam, 
     odds, 
-    proofImageUrl 
+    line, 
+    proofImageUrl,
+    adminUsername
   } = req.body;
 
-  if (!username || !bank || !amount || !team || !sport || !event || !betType || !odds || !proofImageUrl) {
+  if (!username || !amountBet || !eventName || !eventTime || !betType || !selectedTeam || !odds || !proofImageUrl) {
     return res.status(400).json({ success: false, message: 'All fields required.' });
   }
 
@@ -146,18 +147,19 @@ app.post('/api/submit-sports-bet', async (req, res) => {
     // Append bet data to Sports Bets sheet
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
-      range: `${sportsBetsSheetName}!A:I`,
+      range: `${sportsBetsSheetName}!A:J`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[
           formattedTime,    // Time
           username,         // Username
-          bank,            // Bank
-          amount,          // Amount
-          team,            // Team
-          sport,           // Sport
-          event,           // Event
-          betType,         // Bet Type (h2h, spreads, totals)
+          amountBet,        // Amount Bet
+          selectedTeam,     // Selected Team
+          eventName,        // Event Name
+          eventTime,        // Event Time
+          betType,          // Bet Type (Moneyline, Spread, Total)
+          odds,             // Odds
+          line || '',       // Line (for spreads/totals)
           `=IMAGE("${proofImageUrl}")` // Proof Image
         ]]
       }
