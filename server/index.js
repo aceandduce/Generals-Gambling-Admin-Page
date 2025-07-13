@@ -94,7 +94,7 @@ app.post('/api/submit', async (req, res) => {
     // Add 2% to admin if admin is in the sheet
     if (adminRow !== -1) {
       const adminCurrent = parseFloat(rows[adminRow][1] || '0');
-      const adminBonus = adminCurrent + (parseFloat(amountToAdd) * 0.02);
+      const adminBonus = adminCurrent + (parseFloat(amountToAdd) * 0.01);
       await sheets.spreadsheets.values.update({
         spreadsheetId: SHEET_ID,
         range: `${SHEET_NAME}!B${adminRow + 2}`,
@@ -144,7 +144,7 @@ app.post('/api/submit-sports-bet', async (req, res) => {
     adminUsername
   } = req.body;
 
-  if (!username || !amountBet || !eventName || !eventTime || !betType || !selectedTeam || !odds || !proofImageUrl) {
+  if (!username || !amountBet || !eventName || !eventTime || !betType || !selectedTeam || !odds || !proofImageUrl || !adminUsername) {
     return res.status(400).json({ success: false, message: 'All fields required.' });
   }
 
@@ -153,6 +153,29 @@ app.post('/api/submit-sports-bet', async (req, res) => {
     const sportsBetsSheetName = 'Sports Bets';
     const now = new Date();
     const formattedTime = now.toLocaleString('en-US', { hour12: false });
+
+    // Get all usernames from column A to find admin row
+    const readRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${SHEET_NAME}!A2:B`,
+    });
+    const rows = readRes.data.values || [];
+    let adminRow = -1;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i][0] === adminUsername) adminRow = i;
+    }
+
+    // Add 1% to admin if admin is in the sheet
+    if (adminRow !== -1) {
+      const adminCurrent = parseFloat(rows[adminRow][1] || '0');
+      const adminBonus = adminCurrent + (parseFloat(amountBet) * 0.01);
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `${SHEET_NAME}!B${adminRow + 2}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [[adminBonus]] },
+      });
+    }
 
     // Append bet data to Sports Bets sheet
     await sheets.spreadsheets.values.append({
