@@ -484,8 +484,7 @@ function displayOdds(sportData) {
               <tr>
                 <th>Bet Type</th>
                 <th>Selection</th>
-                <th>Original Odds</th>
-                <th>Your Odds (20% vig)</th>
+                <th>Odds</th>
                 <th>Line</th>
               </tr>
             </thead>
@@ -495,14 +494,12 @@ function displayOdds(sportData) {
       bookmaker.markets.forEach(market => {
         market.outcomes.forEach(outcome => {
           const originalOdds = outcome.price;
-          const adjustedOdds = calculateAdjustedOdds(originalOdds);
           
           html += `
             <tr>
               <td>${getMarketDisplayName(market.key)}</td>
-              <td class="betting-cell" data-event="${event.away_team} @ ${event.home_team}" data-event-time="${event.commence_time}" data-bet-type="${getMarketDisplayName(market.key)}" data-selection="${outcome.name}" data-odds="${adjustedOdds.toFixed(2)}" data-line="${outcome.point ? outcome.point : '-'}">${outcome.name}</td>
+              <td class="betting-cell" data-event="${event.away_team} @ ${event.home_team}" data-event-time="${event.commence_time}" data-bet-type="${getMarketDisplayName(market.key)}" data-selection="${outcome.name}" data-odds="${originalOdds.toFixed(2)}" data-line="${outcome.point ? outcome.point : '-'}">${outcome.name}</td>
               <td>${originalOdds.toFixed(2)}</td>
-              <td class="adjusted-odds">${adjustedOdds.toFixed(2)}</td>
               <td>${outcome.point ? outcome.point : '-'}</td>
             </tr>
           `;
@@ -625,12 +622,7 @@ function displayOdds(sportData) {
   document.getElementById('bettingForm').addEventListener('submit', handleBettingFormSubmit);
 }
 
-function calculateAdjustedOdds(originalOdds) {
-  // Apply 20% vig reduction with minimum of 1.01
-  // Formula: adjusted_odds = original_odds * (1 - 0.20)
-  const adjustedOdds = originalOdds * 0.8;
-  return Math.max(adjustedOdds, 1.01);
-}
+
 
 function getMarketDisplayName(marketKey) {
   const marketNames = {
