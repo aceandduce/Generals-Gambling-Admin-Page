@@ -200,23 +200,23 @@ function renderForm() {
       document.getElementById('formError').innerText = 'Image required.';
       return;
     }
-    // Upload image to ImgBB first
-    const imgbbApiKey = '321fcbefd94f6d6936d225a7c1004060'; // <-- Replace with your ImgBB API key
-    const imageBase64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(proofImage);
-    });
-    let imgbbUrl = '';
+    // Upload image to Fivemanage first
+    const fivemanageApiKey = 'tAhG8ZNH6lBSEf0xnJT2aOuDP7Jiu9u7'; // <-- Replace with your Fivemanage API key
+    let fivemanageUrl = '';
     try {
-      const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+      const formData = new FormData();
+      formData.append('file', proofImage);
+      
+      const fivemanageRes = await fetch('https://api.fivemanage.com/v1/images', {
         method: 'POST',
-        body: new URLSearchParams({ image: imageBase64 })
+        headers: {
+          'Authorization': `Bearer ${fivemanageApiKey}`
+        },
+        body: formData
       });
-      const imgbbData = await imgbbRes.json();
-      if (imgbbData.success) {
-        imgbbUrl = imgbbData.data.url;
+      const fivemanageData = await fivemanageRes.json();
+      if (fivemanageRes.ok) {
+        fivemanageUrl = fivemanageData.url;
       } else {
         document.getElementById('formError').innerText = 'Image upload failed.';
         return;
@@ -229,7 +229,7 @@ function renderForm() {
     const payload = {
       playerUsername,
       amountToAdd,
-      proofImageUrl: imgbbUrl,
+      proofImageUrl: fivemanageUrl,
       adminUsername: loggedInUsername
     };
     const res = await fetch(`${backendUrl}/api/submit`, {
@@ -323,23 +323,23 @@ function renderRaffleTickets() {
       return;
     }
     
-    // Upload image to ImgBB first
-    const imgbbApiKey = '321fcbefd94f6d6936d225a7c1004060'; // <-- Replace with your ImgBB API key
-    const imageBase64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(proofImage);
-    });
-    let imgbbUrl = '';
+    // Upload image to Fivemanage first
+    const fivemanageApiKey = 'tAhG8ZNH6lBSEf0xnJT2aOuDP7Jiu9u7'; // <-- Replace with your Fivemanage API key
+    let fivemanageUrl = '';
     try {
-      const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+      const formData = new FormData();
+      formData.append('file', proofImage);
+      
+      const fivemanageRes = await fetch('https://api.fivemanage.com/v1/images', {
         method: 'POST',
-        body: new URLSearchParams({ image: imageBase64 })
+        headers: {
+          'Authorization': `Bearer ${fivemanageApiKey}`
+        },
+        body: formData
       });
-      const imgbbData = await imgbbRes.json();
-      if (imgbbData.success) {
-        imgbbUrl = imgbbData.data.url;
+      const fivemanageData = await fivemanageRes.json();
+      if (fivemanageRes.ok) {
+        fivemanageUrl = fivemanageData.url;
       } else {
         document.getElementById('raffleFormError').innerText = 'Image upload failed.';
         return;
@@ -354,7 +354,7 @@ function renderRaffleTickets() {
       phoneNumber,
       stateId,
       amountPurchased,
-      proofImageUrl: imgbbUrl,
+      proofImageUrl: fivemanageUrl,
       adminUsername: loggedInUsername
     };
     
@@ -730,24 +730,23 @@ async function handleBettingFormSubmit(e) {
   document.getElementById('bettingSuccess').textContent = 'Processing... Please wait.';
   document.getElementById('bettingError').textContent = '';
   
-  // Upload image to ImgBB
-  const imgbbApiKey = '321fcbefd94f6d6936d225a7c1004060';
-  const imageBase64 = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(proofImage);
-  });
-  
-  let imgbbUrl = '';
+  // Upload image to Fivemanage
+  const fivemanageApiKey = 'tAhG8ZNH6lBSEf0xnJT2aOuDP7Jiu9u7';
+  let fivemanageUrl = '';
   try {
-    const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+    const formData = new FormData();
+    formData.append('file', proofImage);
+    
+    const fivemanageRes = await fetch('https://api.fivemanage.com/v1/images', {
       method: 'POST',
-      body: new URLSearchParams({ image: imageBase64 })
+      headers: {
+        'Authorization': `Bearer ${fivemanageApiKey}`
+      },
+      body: formData
     });
-    const imgbbData = await imgbbRes.json();
-    if (imgbbData.success) {
-      imgbbUrl = imgbbData.data.url;
+    const fivemanageData = await fivemanageRes.json();
+    if (fivemanageRes.ok) {
+      fivemanageUrl = fivemanageData.url;
     } else {
       document.getElementById('bettingError').textContent = 'Image upload failed.';
       document.getElementById('bettingSuccess').textContent = '';
@@ -769,7 +768,7 @@ async function handleBettingFormSubmit(e) {
     selectedTeam: currentBettingData.selectedTeam,
     odds: currentBettingData.odds,
     line: currentBettingData.line,
-    proofImageUrl: imgbbUrl,
+    proofImageUrl: fivemanageUrl,
     adminUsername: loggedInUsername
   };
   
@@ -781,7 +780,7 @@ async function handleBettingFormSubmit(e) {
     });
     
     if (res.ok) {
-      document.getElementById('bettingSuccess').textContent = '✅ Bet submitted successfully! Data saved to Google Sheets.';
+      document.getElementById('bettingSuccess').textContent = '✅ Bet submitted successfully! Data saved to database.';
       document.getElementById('bettingError').textContent = '';
       document.getElementById('bettingForm').reset();
       setTimeout(() => {
