@@ -207,18 +207,18 @@ function renderForm() {
       const formData = new FormData();
       formData.append('file', proofImage);
       
-      const fivemanageRes = await fetch('https://api.fivemanage.com/v1/images', {
+      const fivemanageRes = await fetch('https://fmapi.net/api/v2/image', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${fivemanageApiKey}`
+          'Authorization': fivemanageApiKey
         },
         body: formData
       });
       const fivemanageData = await fivemanageRes.json();
-      if (fivemanageRes.ok) {
-        fivemanageUrl = fivemanageData.url;
+      if (fivemanageRes.ok && fivemanageData.data && fivemanageData.data.url) {
+        fivemanageUrl = fivemanageData.data.url;
       } else {
-        document.getElementById('formError').innerText = 'Image upload failed.';
+        document.getElementById('formError').innerText = fivemanageData?.message || 'Image upload failed.';
         return;
       }
     } catch (err) {
@@ -330,18 +330,18 @@ function renderRaffleTickets() {
       const formData = new FormData();
       formData.append('file', proofImage);
       
-      const fivemanageRes = await fetch('https://api.fivemanage.com/v1/images', {
+      const fivemanageRes = await fetch('https://fmapi.net/api/v2/image', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${fivemanageApiKey}`
+          'Authorization': fivemanageApiKey
         },
         body: formData
       });
       const fivemanageData = await fivemanageRes.json();
-      if (fivemanageRes.ok) {
-        fivemanageUrl = fivemanageData.url;
+      if (fivemanageRes.ok && fivemanageData.data && fivemanageData.data.url) {
+        fivemanageUrl = fivemanageData.data.url;
       } else {
-        document.getElementById('raffleFormError').innerText = 'Image upload failed.';
+        document.getElementById('raffleFormError').innerText = fivemanageData?.message || 'Image upload failed.';
         return;
       }
     } catch (err) {
@@ -737,18 +737,18 @@ async function handleBettingFormSubmit(e) {
     const formData = new FormData();
     formData.append('file', proofImage);
     
-    const fivemanageRes = await fetch('https://api.fivemanage.com/v1/images', {
+    const fivemanageRes = await fetch('https://fmapi.net/api/v2/image', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${fivemanageApiKey}`
+        'Authorization': fivemanageApiKey
       },
       body: formData
     });
     const fivemanageData = await fivemanageRes.json();
-    if (fivemanageRes.ok) {
-      fivemanageUrl = fivemanageData.url;
+    if (fivemanageRes.ok && fivemanageData.data && fivemanageData.data.url) {
+      fivemanageUrl = fivemanageData.data.url;
     } else {
-      document.getElementById('bettingError').textContent = 'Image upload failed.';
+      document.getElementById('bettingError').textContent = fivemanageData?.message || 'Image upload failed.';
       document.getElementById('bettingSuccess').textContent = '';
       return;
     }
