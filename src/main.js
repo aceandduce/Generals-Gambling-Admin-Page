@@ -63,6 +63,7 @@ function renderMainMenu() {
       <div class="menu-buttons">
         <button id="addFundsBtn" class="menu-button">Add Funds</button>
         <button id="sportsBetsBtn" class="menu-button">Take Sports Bets</button>
+        <button id="raffleTicketsBtn" class="menu-button">Raffle Tickets</button>
       </div>
       <button id="logoutBtn" class="logout-button">Logout</button>
     </div>
@@ -76,6 +77,11 @@ function renderMainMenu() {
   document.getElementById('sportsBetsBtn').onclick = () => {
     currentPage = 'sportsBets';
     renderSportsBets();
+  };
+
+  document.getElementById('raffleTicketsBtn').onclick = () => {
+    currentPage = 'raffleTickets';
+    renderRaffleTickets();
   };
 
   document.getElementById('logoutBtn').onclick = () => {
@@ -239,6 +245,138 @@ function renderForm() {
       const data = await res.json();
       document.getElementById('formError').innerText = data.message || 'Submission failed.';
       document.getElementById('formSuccess').innerText = '';
+    }
+  };
+}
+
+function renderRaffleTickets() {
+  document.querySelector('#app').innerHTML = `
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+      <button id="backToMenuBtn" style="padding: 0.5rem 1rem; background: #666; color: #fff; border: none; border-radius: 5px; font-size: 0.9rem; cursor: pointer; width: auto;">← Back to Menu</button>
+      <div class="form-container">
+        <h2>Raffle Tickets</h2>
+        <form id="raffleForm">
+          <label>Phone Number</label><br />
+          <input type="tel" id="phoneNumber" required /><br />
+          <label>State ID</label><br />
+          <input type="text" id="stateId" required /><br />
+          <label>Amount Purchased</label><br />
+          <input type="number" id="amountPurchased" min="1" max="10" required /><br />
+          <label>Upload Proof of Purchase Here.</label><br />
+          <input type="file" id="raffleProofImage" accept="image/*" required /><br />
+          <div style="font-size: 0.9em; color: #fff;">You can also paste an image from your clipboard.</div>
+          <button type="button" id="raffleExampleBtn" style="margin-top:10px;">Example</button>
+          <button type="submit">Submit</button>
+          <div id="raffleFormError" style="color:red;"></div>
+          <div id="raffleFormSuccess" style="color:green;"></div>
+        </form>
+        <div id="raffleExampleModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:1000;">
+          <div style="background:#fff; padding:24px; border-radius:8px; max-width:90vw; max-height:90vh; text-align:center; position:relative;">
+            <div style="margin-bottom:12px; font-weight:bold; color:#111;">Here's an example of the proof of purchase, we need the full details of the charge. You can get it on your phone.</div>
+            <img src="https://i.ibb.co/ns7DFSTG/image.png" alt="Example Proof" style="max-width:100%; max-height:60vh; border:1px solid #ccc; border-radius:4px;" />
+            <br />
+            <button id="closeRaffleExampleModal" style="margin-top:16px;">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Modal logic
+  document.getElementById('raffleExampleBtn').onclick = () => {
+    document.getElementById('raffleExampleModal').style.display = 'flex';
+  };
+  document.getElementById('closeRaffleExampleModal').onclick = () => {
+    document.getElementById('raffleExampleModal').style.display = 'none';
+  };
+
+  // Back to menu button
+  document.getElementById('backToMenuBtn').onclick = () => {
+    currentPage = 'menu';
+    renderMainMenu();
+  };
+
+  // Add paste event to allow clipboard image upload
+  const raffleProofImageInput = document.getElementById('raffleProofImage');
+  document.getElementById('raffleForm').addEventListener('paste', (event) => {
+    if (event.clipboardData && event.clipboardData.files && event.clipboardData.files.length > 0) {
+      const file = event.clipboardData.files[0];
+      if (file.type.startsWith('image/')) {
+        // Create a DataTransfer to set the file input
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        raffleProofImageInput.files = dataTransfer.files;
+        // Optionally, show a preview or feedback
+      }
+    }
+  });
+
+  document.getElementById('raffleForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const phoneNumber = document.getElementById('phoneNumber').value;
+    const stateId = document.getElementById('stateId').value;
+    const amountPurchased = document.getElementById('amountPurchased').value;
+    const proofImage = document.getElementById('raffleProofImage').files[0];
+    
+    if (!proofImage) {
+      document.getElementById('raffleFormError').innerText = 'Image required.';
+      return;
+    }
+    
+    // Upload image to ImgBB first
+    const imgbbApiKey = '321fcbefd94f6d6936d225a7c1004060'; // <-- Replace with your ImgBB API key
+    const imageBase64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(proofImage);
+    });
+    let imgbbUrl = '';
+    try {
+      const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+        method: 'POST',
+        body: new URLSearchParams({ image: imageBase64 })
+      });
+      const imgbbData = await imgbbRes.json();
+      if (imgbbData.success) {
+        imgbbUrl = imgbbData.data.url;
+      } else {
+        document.getElementById('raffleFormError').innerText = 'Image upload failed.';
+        return;
+      }
+    } catch (err) {
+      document.getElementById('raffleFormError').innerText = 'Image upload failed.';
+      return;
+    }
+    
+    // Submit form with image URL as JSON
+    const payload = {
+      phoneNumber,
+      stateId,
+      amountPurchased,
+      proofImageUrl: imgbbUrl,
+      adminUsername: loggedInUsername
+    };
+    
+    try {
+      const res = await fetch(`${backendUrl}/api/submit-raffle-ticket`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (res.ok) {
+        document.getElementById('raffleFormSuccess').innerText = 'Raffle ticket submitted successfully!';
+        document.getElementById('raffleFormError').innerText = '';
+        document.getElementById('raffleForm').reset();
+      } else {
+        const data = await res.json();
+        document.getElementById('raffleFormError').innerText = data.message || 'Submission failed.';
+        document.getElementById('raffleFormSuccess').innerText = '';
+      }
+    } catch (error) {
+      document.getElementById('raffleFormError').innerText = 'Connection failed. Please try again.';
+      document.getElementById('raffleFormSuccess').innerText = '';
     }
   };
 }

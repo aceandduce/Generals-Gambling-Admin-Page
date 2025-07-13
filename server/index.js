@@ -183,6 +183,105 @@ app.post('/api/submit-sports-bet', async (req, res) => {
   }
 });
 
+// Raffle ticket submission endpoint
+app.post('/api/submit-raffle-ticket', async (req, res) => {
+  const { 
+    phoneNumber, 
+    stateId, 
+    amountPurchased, 
+    proofImageUrl,
+    adminUsername
+  } = req.body;
+
+  if (!phoneNumber || !stateId || !amountPurchased || !proofImageUrl || !adminUsername) {
+    return res.status(400).json({ success: false, message: 'All fields required.' });
+  }
+
+  try {
+    const sheets = getSheetsClient();
+    const raffleSheetName = 'Raffle';
+    const adminRaffleSheetName = 'Admin Raffle';
+    const now = new Date();
+    const formattedTime = now.toLocaleString('en-US', { hour12: false });
+
+    // First, check if the state ID exists in the Raffle sheet
+    const raffleReadRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${raffleSheetName}!A:C`,
+    });
+    
+    const raffleRows = raffleReadRes.data.values || [];
+    let existingRow = -1;
+    let currentTotal = 0;
+    
+    // Find the row with matching state ID (column B)
+    for (let i = 0; i < raffleRows.length; i++) {
+      if (raffleRows[i][1] === stateId) { // Column B is index 1
+        existingRow = i;
+        currentTotal = parseFloat(raffleRows[i][2] || '0'); // Column C is index 2
+        break;
+      }
+    }
+
+    const newAmount = parseInt(amountPurchased);
+    const totalAfterPurchase = currentTotal + newAmount;
+
+    // Check if the total would exceed 10
+    if (totalAfterPurchase > 10) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Cannot purchase ${newAmount} tickets. Current total: ${currentTotal}, would exceed maximum of 10 tickets.` 
+      });
+    }
+
+    // Update or add to Raffle sheet
+    if (existingRow !== -1) {
+      // Update existing row
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `${raffleSheetName}!C${existingRow + 1}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [[totalAfterPurchase]] },
+      });
+    } else {
+      // Add new row to Raffle sheet
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SHEET_ID,
+        range: `${raffleSheetName}!A:C`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [[
+            phoneNumber,    // Column A: Phone Number
+            stateId,        // Column B: State ID
+            newAmount       // Column C: Amount Purchased
+          ]]
+        }
+      });
+    }
+
+    // Add to Admin Raffle sheet for tracking individual purchases
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: `${adminRaffleSheetName}!A:E`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[
+          stateId,         // Column A: State ID
+          phoneNumber,     // Column B: Phone Number
+          newAmount,       // Column C: Amount Purchased
+          `=IMAGE("${proofImageUrl}")`, // Column D: Proof Image
+          adminUsername    // Column E: Admin Name
+        ]]
+      }
+    });
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Error in /api/submit-raffle-ticket:', err);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
