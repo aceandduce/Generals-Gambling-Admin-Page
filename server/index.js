@@ -227,6 +227,31 @@ app.post('/api/submit-raffle-ticket', async (req, res) => {
     const now = new Date();
     const formattedTime = now.toLocaleString('en-US', { hour12: false });
 
+    // Get all usernames from column A to find admin row
+    const readRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${SHEET_NAME}!A2:B`,
+    });
+    const rows = readRes.data.values || [];
+    let adminRow = -1;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i][0] === adminUsername) adminRow = i;
+    }
+
+    // Add 10% commission to admin if admin is in the sheet ($10 per ticket)
+    if (adminRow !== -1) {
+      const adminCurrent = parseFloat(rows[adminRow][1] || '0');
+      const commissionPerTicket = 10; // $10 per ticket
+      const totalCommission = parseInt(amountPurchased) * commissionPerTicket;
+      const adminBonus = adminCurrent + totalCommission;
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `${SHEET_NAME}!B${adminRow + 2}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [[adminBonus]] },
+      });
+    }
+
     // First, check if the state ID exists in the Raffle sheet
     const raffleReadRes = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
