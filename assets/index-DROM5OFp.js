@@ -112,8 +112,9 @@
           <input type="number" id="propAmount" min="1" required /><br />
           <label>Passcode (required to join later)</label><br />
           <input type="password" id="propPasscode" required /><br />
-          <label>Submit Proof of Purchase (can submit multiple at once)</label><br />
+          <label>Submit Proof of Purchase</label><br />
           <label>Only needed for stateID bets, not usernames as they deduct automatically.</label><br />
+          <label>(can submit multiple at once)</label><br />          
           <input type="file" id="propProofImages" accept="image/*" multiple required /><br />
           <div style="font-size: 0.9em; color: #fff;">You can also paste images from your clipboard. <button type="button" id="propExampleBtn" style="margin-left:10px;">Example</button></div>
           <button type="submit">Submit Bet</button>
