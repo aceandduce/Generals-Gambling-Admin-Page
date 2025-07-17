@@ -71,19 +71,19 @@ function generateBetID() {
   return 'PB-' + generateRandomString(10);
 }
 
-// Helper: Generate prefixed filename for Fivemanage
-function getPrefixedFilename(file) {
+// Helper: Generate filename for Fivemanage with imageID
+function getFivemanageFilename(imageID, file) {
   const ext = getFileExtension(file.name);
-  return `GeneralsGamblingAdmin_${generateRandomString(12)}.${ext}`;
+  return `GeneralsGamblingAdminImage_${imageID}.${ext}`;
 }
 
-// Universal Fivemanage upload for all sections
-async function uploadToFivemanageWithPrefix(file) {
+// Universal Fivemanage upload with custom filename
+async function uploadToFivemanageWithImageID(file, imageID) {
   const fivemanageApiKey = 'tAhG8ZNH6lBSEf0xnJT2aOuDP7Jiu9u7';
-  const filename = getPrefixedFilename(file);
+  const filename = getFivemanageFilename(imageID, file);
   const formData = new FormData();
   formData.append('file', file, filename);
-  formData.append('metadata', JSON.stringify({ name: filename }));
+  formData.append('metadata', JSON.stringify({ name: filename, description: 'Proof image uploaded from Generals Gambling Admin.' }));
   const res = await fetch('https://fmapi.net/api/v2/image', {
     method: 'POST',
     headers: { 'Authorization': fivemanageApiKey },
@@ -250,7 +250,8 @@ function renderForm() {
     }
     let fivemanageUrl = '', fivemanageFilename = '';
     try {
-      const { url, filename } = await uploadToFivemanageWithPrefix(proofImage);
+      const imageID = generateRandomString(12);
+      const { url, filename } = await uploadToFivemanageWithImageID(proofImage, imageID);
       fivemanageUrl = url;
       fivemanageFilename = filename;
     } catch (err) {
@@ -358,7 +359,8 @@ function renderRaffleTickets() {
     
     let fivemanageUrl = '', fivemanageFilename = '';
     try {
-      const { url, filename } = await uploadToFivemanageWithPrefix(proofImage);
+      const imageID = generateRandomString(12);
+      const { url, filename } = await uploadToFivemanageWithImageID(proofImage, imageID);
       fivemanageUrl = url;
       fivemanageFilename = filename;
     } catch (err) {
@@ -487,9 +489,12 @@ async function handlePropBetFormSubmit(e) {
   document.getElementById('propFormError').innerText = '';
   document.getElementById('propFormSuccess').innerText = 'Uploading images...';
   let proofUploads = [];
+  const betID = generateBetID();
   try {
-    for (const file of proofFiles) {
-      const { url, filename } = await uploadToFivemanageWithPrefix(file);
+    for (let i = 0; i < proofFiles.length; i++) {
+      const file = proofFiles[i];
+      const imageID = `${betID}_${i+1}`;
+      const { url, filename } = await uploadToFivemanageWithImageID(file, imageID);
       proofUploads.push({ url, filename });
     }
   } catch (err) {
@@ -498,7 +503,6 @@ async function handlePropBetFormSubmit(e) {
     return;
   }
   // Prepare row for Google Sheets: [A-K+], now with filenames
-  const betID = generateBetID();
   const rake = Math.round(amount * 0.10 * 100) / 100;
   const totalPayout = Math.round((amount * players.length + rake) * 100) / 100;
   const now = new Date().toLocaleString();
@@ -1002,7 +1006,8 @@ async function handleBettingFormSubmit(e) {
   
   let fivemanageUrl = '', fivemanageFilename = '';
   try {
-    const { url, filename } = await uploadToFivemanageWithPrefix(proofImage);
+    const imageID = generateRandomString(12);
+    const { url, filename } = await uploadToFivemanageWithImageID(proofImage, imageID);
     fivemanageUrl = url;
     fivemanageFilename = filename;
   } catch (err) {
