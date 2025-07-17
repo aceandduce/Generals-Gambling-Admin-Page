@@ -420,6 +420,7 @@ function renderPropBets() {
           <label>Passcode (required to join later)</label><br />
           <input type="password" id="propPasscode" required /><br />
           <label>Submit Proof of Purchase (can submit multiple at once)</label><br />
+          <label>Only needed for stateID bets, not usernames as they deduct automatically.</label><br />
           <input type="file" id="propProofImages" accept="image/*" multiple required /><br />
           <div style="font-size: 0.9em; color: #fff;">You can also paste images from your clipboard. <button type="button" id="propExampleBtn" style="margin-left:10px;">Example</button></div>
           <button type="submit">Submit Bet</button>
@@ -435,14 +436,12 @@ function renderPropBets() {
           </div>
         </div>
       </div>
-      <div id="propActiveDropdownContainer" style="margin-top:2rem; width:100%; max-width:500px;"></div>
     </div>
   `;
   document.getElementById('backToMenuBtn').onclick = () => { currentPage = 'menu'; renderMainMenu(); };
   document.getElementById('propExampleBtn').onclick = () => { document.getElementById('propExampleModal').style.display = 'flex'; };
   document.getElementById('closePropExampleModal').onclick = () => { document.getElementById('propExampleModal').style.display = 'none'; };
   document.getElementById('propBetForm').onsubmit = handlePropBetFormSubmit;
-  renderPropActiveDropdown();
 }
 
 // --- PROP BETS FULL IMPLEMENTATION ---
@@ -520,139 +519,6 @@ async function handlePropBetFormSubmit(e) {
   document.getElementById('propFormSuccess').innerText = 'Prop bet submitted!';
   document.getElementById('propFormError').innerText = '';
   document.getElementById('propBetForm').reset();
-  renderPropActiveDropdown();
-}
-
-// --- Fetch and Render Active Bets Dropdown ---
-async function renderPropActiveDropdown() {
-  const res = await fetch(`${backendUrl}/api/active-prop-bets`);
-  const bets = res.ok ? await res.json() : [];
-  const container = document.getElementById('propActiveDropdownContainer');
-  container.innerHTML = `
-    <label for="propActiveDropdown">Join an Active Prop Bet:</label>
-    <input id="propActiveDropdown" list="propActiveList" placeholder="Search by bet name..." style="width:100%; padding:0.5rem;" />
-    <datalist id="propActiveList">
-      ${bets.map(bet => `<option value="${bet.betName}">${bet.betName} - ${bet.howToWin}</option>`).join('')}
-    </datalist>
-    <button id="propJoinBtn" style="margin-top:10px;">Join</button>
-    <div id="propJoinError" style="color:red;"></div>
-  `;
-  document.getElementById('propJoinBtn').onclick = () => handlePropJoin(bets);
-}
-
-// --- Join Modal Logic ---
-async function handlePropJoin(bets) {
-  const betName = document.getElementById('propActiveDropdown').value.trim();
-  const bet = bets.find(b => b.betName === betName);
-  if (!bet) {
-    document.getElementById('propJoinError').innerText = 'Bet not found.';
-    return;
-  }
-  // Show passcode modal
-  showPropJoinModal(bet);
-}
-
-function showPropJoinModal(bet) {
-  // Remove any existing modal
-  let modal = document.getElementById('propJoinModal');
-  if (modal) modal.remove();
-  // Modal HTML
-  modal = document.createElement('div');
-  modal.id = 'propJoinModal';
-  modal.style = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:2000;';
-  modal.innerHTML = `
-    <div style="background:#fff; padding:2rem; border-radius:10px; max-width:500px; width:90vw; max-height:90vh; overflow-y:auto; position:relative;">
-      <button id="closePropJoinModal" style="position:absolute; top:10px; right:15px; background:none; border:none; color:#333; font-size:1.5rem; cursor:pointer;">×</button>
-      <h3>${bet.betName}</h3>
-      <div style="margin-bottom:1rem;">How to win: <b>${bet.howToWin}</b></div>
-      <form id="propJoinPassForm">
-        <label>Enter Passcode:</label><br />
-        <input type="password" id="propJoinPasscode" required style="width:100%; margin-bottom:1rem;" />
-        <button type="submit">Check</button>
-        <div id="propJoinPassError" style="color:red;"></div>
-      </form>
-      <div id="propJoinDetails" style="display:none;"></div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-  document.getElementById('closePropJoinModal').onclick = () => modal.remove();
-  document.getElementById('propJoinPassForm').onsubmit = (e) => {
-    e.preventDefault();
-    const pass = document.getElementById('propJoinPasscode').value;
-    if (pass !== bet.passcode) {
-      document.getElementById('propJoinPassError').innerText = 'Incorrect passcode.';
-      return;
-    }
-    document.getElementById('propJoinPassError').innerText = '';
-    showPropJoinDetails(bet, modal);
-  };
-}
-
-function showPropJoinDetails(bet, modal) {
-  const details = document.getElementById('propJoinDetails');
-  details.style.display = 'block';
-  details.innerHTML = `
-    <div style="margin-bottom:1rem;">Current Players: <b>${bet.players}</b></div>
-    <div style="margin-bottom:1rem;">Total Payout: <b>${bet.totalPayout}</b></div>
-    <form id="propAddToBetForm">
-      <label>Usernames/StateIDs (comma separated):</label><br />
-      <textarea id="propAddPlayers" placeholder="e.g. john_doe, 123456" required style="width:100%; min-height:40px;"></textarea><br />
-      <label>Submit Proof of Purchase (multiple):</label><br />
-      <input type="file" id="propAddProofImages" accept="image/*" multiple required /><br />
-      <button type="submit">Add to Bet</button>
-      <div id="propAddToBetError" style="color:red;"></div>
-      <div id="propAddToBetSuccess" style="color:green;"></div>
-    </form>
-  `;
-  document.getElementById('propAddToBetForm').onsubmit = (e) => handleAddToPropBet(e, bet, modal);
-}
-
-async function handleAddToPropBet(e, bet, modal) {
-  e.preventDefault();
-  const addPlayersRaw = document.getElementById('propAddPlayers').value.trim();
-  const addProofFiles = Array.from(document.getElementById('propAddProofImages').files);
-  const addPlayers = addPlayersRaw.split(',').map(p => p.trim()).filter(Boolean);
-  if (!addPlayers.length || !addProofFiles.length) {
-    document.getElementById('propAddToBetError').innerText = 'All fields required.';
-    return;
-  }
-  document.getElementById('propAddToBetError').innerText = '';
-  document.getElementById('propAddToBetSuccess').innerText = 'Uploading images...';
-  let proofUrls = [];
-  try {
-    for (const file of addProofFiles) {
-      const url = await uploadToFivemanage(file);
-      proofUrls.push(url);
-    }
-  } catch (err) {
-    document.getElementById('propAddToBetError').innerText = err.message;
-    document.getElementById('propAddToBetSuccess').innerText = '';
-    return;
-  }
-  // Deduct balance for usernames in Players sheet
-  const allPlayers = await fetchPlayers();
-  for (const player of addPlayers) {
-    const isUsername = allPlayers.some(p => p.username === player);
-    if (isUsername) {
-      await deductPlayerBalance(player, bet.amount);
-    }
-    // If not username (assume stateID), require proof (already enforced by UI: one proof per player)
-  }
-  // Update backend/Google Sheets: append new players and proof images, update payout
-  await fetch(`${backendUrl}/api/join-prop-bet`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      betID: bet.betID,
-      addPlayers: addPlayers.join(','),
-      addProofUrls: proofUrls
-    })
-  });
-  document.getElementById('propAddToBetSuccess').innerText = 'Added to bet!';
-  document.getElementById('propAddToBetError').innerText = '';
-  document.getElementById('propAddToBetForm').reset();
-  setTimeout(() => modal.remove(), 2000);
-  renderPropActiveDropdown();
 }
 
 // Sports betting functions
