@@ -71,6 +71,32 @@ function generateBetID() {
   return 'PB-' + generateRandomString(10);
 }
 
+// Helper: Generate prefixed filename for Fivemanage
+function getPrefixedFilename(file) {
+  const ext = getFileExtension(file.name);
+  return `GeneralsGamblingAdmin_${generateRandomString(12)}.${ext}`;
+}
+
+// Universal Fivemanage upload for all sections
+async function uploadToFivemanageWithPrefix(file) {
+  const fivemanageApiKey = 'tAhG8ZNH6lBSEf0xnJT2aOuDP7Jiu9u7';
+  const filename = getPrefixedFilename(file);
+  const formData = new FormData();
+  formData.append('file', file, filename);
+  formData.append('metadata', JSON.stringify({ name: filename }));
+  const res = await fetch('https://fmapi.net/api/v2/image', {
+    method: 'POST',
+    headers: { 'Authorization': fivemanageApiKey },
+    body: formData
+  });
+  const data = await res.json();
+  if (res.ok && data.data && data.data.url) {
+    return { url: data.data.url, filename };
+  } else {
+    throw new Error(data?.message || 'Image upload failed.');
+  }
+}
+
 // 2. Update all Fivemanage uploads to use metadata with prefixed filename
 async function uploadToFivemanage(file) {
   const fivemanageApiKey = 'tAhG8ZNH6lBSEf0xnJT2aOuDP7Jiu9u7';
@@ -222,36 +248,21 @@ function renderForm() {
       document.getElementById('formError').innerText = 'Image required.';
       return;
     }
-    // Upload image to Fivemanage first
-    const fivemanageApiKey = 'tAhG8ZNH6lBSEf0xnJT2aOuDP7Jiu9u7'; // <-- Replace with your Fivemanage API key
-    let fivemanageUrl = '';
+    let fivemanageUrl = '', fivemanageFilename = '';
     try {
-      const formData = new FormData();
-      formData.append('file', proofImage);
-      
-      const fivemanageRes = await fetch('https://fmapi.net/api/v2/image', {
-        method: 'POST',
-        headers: {
-          'Authorization': fivemanageApiKey
-        },
-        body: formData
-      });
-      const fivemanageData = await fivemanageRes.json();
-      if (fivemanageRes.ok && fivemanageData.data && fivemanageData.data.url) {
-        fivemanageUrl = fivemanageData.data.url;
-      } else {
-        document.getElementById('formError').innerText = fivemanageData?.message || 'Image upload failed.';
-        return;
-      }
+      const { url, filename } = await uploadToFivemanageWithPrefix(proofImage);
+      fivemanageUrl = url;
+      fivemanageFilename = filename;
     } catch (err) {
-      document.getElementById('formError').innerText = 'Image upload failed.';
+      document.getElementById('formError').innerText = err.message;
       return;
     }
-    // Submit form with image URL as JSON
+    // Submit form with image URL and filename as JSON
     const payload = {
       playerUsername,
       amountToAdd,
       proofImageUrl: fivemanageUrl,
+      proofImageFilename: fivemanageFilename,
       adminUsername: loggedInUsername
     };
     const res = await fetch(`${backendUrl}/api/submit`, {
@@ -345,38 +356,23 @@ function renderRaffleTickets() {
       return;
     }
     
-    // Upload image to Fivemanage first
-    const fivemanageApiKey = 'tAhG8ZNH6lBSEf0xnJT2aOuDP7Jiu9u7'; // <-- Replace with your Fivemanage API key
-    let fivemanageUrl = '';
+    let fivemanageUrl = '', fivemanageFilename = '';
     try {
-      const formData = new FormData();
-      formData.append('file', proofImage);
-      
-      const fivemanageRes = await fetch('https://fmapi.net/api/v2/image', {
-        method: 'POST',
-        headers: {
-          'Authorization': fivemanageApiKey
-        },
-        body: formData
-      });
-      const fivemanageData = await fivemanageRes.json();
-      if (fivemanageRes.ok && fivemanageData.data && fivemanageData.data.url) {
-        fivemanageUrl = fivemanageData.data.url;
-      } else {
-        document.getElementById('raffleFormError').innerText = fivemanageData?.message || 'Image upload failed.';
-        return;
-      }
+      const { url, filename } = await uploadToFivemanageWithPrefix(proofImage);
+      fivemanageUrl = url;
+      fivemanageFilename = filename;
     } catch (err) {
-      document.getElementById('raffleFormError').innerText = 'Image upload failed.';
+      document.getElementById('raffleFormError').innerText = err.message;
       return;
     }
     
-    // Submit form with image URL as JSON
+    // Submit form with image URL and filename as JSON
     const payload = {
       phoneNumber,
       stateId,
       amountPurchased,
       proofImageUrl: fivemanageUrl,
+      proofImageFilename: fivemanageFilename,
       adminUsername: loggedInUsername
     };
     
@@ -490,33 +486,26 @@ async function handlePropBetFormSubmit(e) {
   }
   document.getElementById('propFormError').innerText = '';
   document.getElementById('propFormSuccess').innerText = 'Uploading images...';
-  let proofUrls = [];
+  let proofUploads = [];
   try {
     for (const file of proofFiles) {
-      const url = await uploadToFivemanage(file);
-      proofUrls.push(url);
+      const { url, filename } = await uploadToFivemanageWithPrefix(file);
+      proofUploads.push({ url, filename });
     }
   } catch (err) {
     document.getElementById('propFormError').innerText = err.message;
     document.getElementById('propFormSuccess').innerText = '';
     return;
   }
-  // Deduct balance for usernames in Players sheet
-  const allPlayers = await fetchPlayers();
-  for (const player of players) {
-    const isUsername = allPlayers.some(p => p.username === player);
-    if (isUsername) {
-      await deductPlayerBalance(player, amount);
-    }
-    // If not username (assume stateID), require proof (already enforced by UI: one proof per player)
-  }
+  // Prepare row for Google Sheets: [A-K+], now with filenames
   const betID = generateBetID();
   const rake = Math.round(amount * 0.10 * 100) / 100;
   const totalPayout = Math.round((amount * players.length + rake) * 100) / 100;
   const now = new Date().toLocaleString();
-  // Prepare row for Google Sheets: [A-K+]
+  const proofUrls = proofUploads.map(p => p.url);
+  const proofFilenames = proofUploads.map(p => p.filename);
   const row = [
-    betID, betName, howToWin, amount, rake, passcode, players.join(','), now, totalPayout, 'active', ...proofUrls
+    betID, betName, howToWin, amount, rake, passcode, players.join(','), now, totalPayout, 'active', ...proofUrls, ...proofFilenames
   ];
   // Submit to backend/Google Sheets
   await fetch(`${backendUrl}/api/submit-prop-bet`, {
@@ -643,7 +632,7 @@ async function handleAddToPropBet(e, bet, modal) {
     if (isUsername) {
       await deductPlayerBalance(player, bet.amount);
     }
-    // If not username (assume stateID), require proof (already enforced by UI)
+    // If not username (assume stateID), require proof (already enforced by UI: one proof per player)
   }
   // Update backend/Google Sheets: append new players and proof images, update payout
   await fetch(`${backendUrl}/api/join-prop-bet`, {
@@ -1011,30 +1000,13 @@ async function handleBettingFormSubmit(e) {
   document.getElementById('bettingSuccess').textContent = 'Processing... Please wait.';
   document.getElementById('bettingError').textContent = '';
   
-  // Upload image to Fivemanage
-  const fivemanageApiKey = 'tAhG8ZNH6lBSEf0xnJT2aOuDP7Jiu9u7';
-  let fivemanageUrl = '';
+  let fivemanageUrl = '', fivemanageFilename = '';
   try {
-    const formData = new FormData();
-    formData.append('file', proofImage);
-    
-    const fivemanageRes = await fetch('https://fmapi.net/api/v2/image', {
-      method: 'POST',
-      headers: {
-        'Authorization': fivemanageApiKey
-      },
-      body: formData
-    });
-    const fivemanageData = await fivemanageRes.json();
-    if (fivemanageRes.ok && fivemanageData.data && fivemanageData.data.url) {
-      fivemanageUrl = fivemanageData.data.url;
-    } else {
-      document.getElementById('bettingError').textContent = fivemanageData?.message || 'Image upload failed.';
-      document.getElementById('bettingSuccess').textContent = '';
-      return;
-    }
+    const { url, filename } = await uploadToFivemanageWithPrefix(proofImage);
+    fivemanageUrl = url;
+    fivemanageFilename = filename;
   } catch (err) {
-    document.getElementById('bettingError').textContent = 'Image upload failed.';
+    document.getElementById('bettingError').textContent = err.message;
     document.getElementById('bettingSuccess').textContent = '';
     return;
   }
@@ -1050,6 +1022,7 @@ async function handleBettingFormSubmit(e) {
     odds: currentBettingData.odds,
     line: currentBettingData.line,
     proofImageUrl: fivemanageUrl,
+    proofImageFilename: fivemanageFilename,
     adminUsername: loggedInUsername
   };
   
