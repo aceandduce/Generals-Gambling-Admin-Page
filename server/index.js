@@ -345,15 +345,46 @@ app.post('/api/submit-prop-bet', async (req, res) => {
   try {
     const sheets = getSheetsClient();
     const propBetsSheetName = 'Prop Bets';
-    // Append the row to the Prop Bets sheet
+    // --- Fix rake and pot calculation ---
+    const amount = parseFloat(row[3]);
+    const players = row[6].split(',').map(p => p.trim()).filter(Boolean);
+    const totalBet = amount * players.length;
+    const rake = Math.round(totalBet * 0.10 * 100) / 100;
+    const pot = Math.round((totalBet - rake) * 100) / 100;
+    row[4] = rake; // update rake
+    row[8] = pot;  // update pot/totalPayout
+    // --- Only append image URLs (not filenames) ---
+    // Assume proofUrls are from index 10 to 10+N, proofFilenames after that
+    const proofCount = (row.length - 10) / 2;
+    const proofUrls = row.slice(10, 10 + proofCount);
+    // Compose the row for the sheet: [A-J, ...proofUrls]
+    const sheetRow = row.slice(0, 10).concat(proofUrls);
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
       range: `${propBetsSheetName}!A:Z`,
       valueInputOption: 'USER_ENTERED',
-      requestBody: { values: [row] }
+      requestBody: { values: [sheetRow] }
     });
-    // Optionally, handle deduction/tracking here if needed
-    // (e.g., deduct from each username in playersCSV if you want backend-side deduction)
+    // --- Deduct from each username in Players sheet ---
+    const playersSheetName = 'Players';
+    const readRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${playersSheetName}!A2:B`,
+    });
+    const playerRows = readRes.data.values || [];
+    for (const username of players) {
+      const idx = playerRows.findIndex(r => r[0] === username);
+      if (idx !== -1) {
+        const current = parseFloat(playerRows[idx][1] || '0');
+        const newAmount = current - amount;
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SHEET_ID,
+          range: `${playersSheetName}!B${idx + 2}`,
+          valueInputOption: 'USER_ENTERED',
+          requestBody: { values: [[newAmount]] },
+        });
+      }
+    }
     return res.json({ success: true });
   } catch (err) {
     console.error('Error in /api/submit-prop-bet:', err);
