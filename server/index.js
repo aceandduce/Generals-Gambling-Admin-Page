@@ -330,6 +330,75 @@ app.post('/api/submit-raffle-ticket', async (req, res) => {
   }
 });
 
+// === PROP BETS ENDPOINTS ===
+
+// POST /api/submit-prop-bet
+app.post('/api/submit-prop-bet', async (req, res) => {
+  /*
+    Expects req.body.row to be an array:
+    [betID, betName, howToWin, amount, rake, passcode, playersCSV, now, totalPayout, 'active', ...proofUrls, ...proofFilenames]
+  */
+  const row = req.body.row;
+  if (!row || row.length < 10) {
+    return res.status(400).json({ success: false, message: 'Invalid prop bet data.' });
+  }
+  try {
+    const sheets = getSheetsClient();
+    const propBetsSheetName = 'Prop Bets';
+    // Append the row to the Prop Bets sheet
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: `${propBetsSheetName}!A:Z`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [row] }
+    });
+    // Optionally, handle deduction/tracking here if needed
+    // (e.g., deduct from each username in playersCSV if you want backend-side deduction)
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Error in /api/submit-prop-bet:', err);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// GET /api/active-prop-bets
+app.get('/api/active-prop-bets', async (req, res) => {
+  try {
+    const sheets = getSheetsClient();
+    const propBetsSheetName = 'Prop Bets';
+    const readRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${propBetsSheetName}!A1:Z`,
+    });
+    const rows = readRes.data.values || [];
+    if (rows.length < 2) return res.json([]); // No data
+    const headers = rows[0];
+    const bets = rows.slice(1).map(row => {
+      const bet = {};
+      headers.forEach((h, i) => bet[h] = row[i]);
+      // For dropdown, only send betName and howToWin (and any other needed fields)
+      return {
+        betID: row[0],
+        betName: row[1],
+        howToWin: row[2],
+        amount: row[3],
+        rake: row[4],
+        passcode: row[5],
+        players: row[6],
+        now: row[7],
+        totalPayout: row[8],
+        status: row[9],
+        proofUrls: row.slice(10, 10 + (row.length - 10) / 2),
+        proofFilenames: row.slice(10 + (row.length - 10) / 2)
+      };
+    }).filter(bet => bet.status === 'active');
+    res.json(bets);
+  } catch (err) {
+    console.error('Error in /api/active-prop-bets:', err);
+    res.status(500).json([]);
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
