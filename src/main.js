@@ -81,8 +81,12 @@ function getFivemanageFilename(imageID, file) {
 async function uploadToFivemanageWithImageID(file, imageID) {
   const fivemanageApiKey = 'tAhG8ZNH6lBSEf0xnJT2aOuDP7Jiu9u7';
   const filename = getFivemanageFilename(imageID, file);
+  
+  // Create a new File object with the custom filename
+  const renamedFile = new File([file], filename, { type: file.type });
+  
   const formData = new FormData();
-  formData.append('file', file, filename);
+  formData.append('file', renamedFile);
   formData.append('metadata', JSON.stringify({ name: filename, description: 'Proof image uploaded from Generals Gambling Admin.' }));
   const res = await fetch('https://fmapi.net/api/v2/image', {
     method: 'POST',
