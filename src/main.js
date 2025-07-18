@@ -74,7 +74,7 @@ function generateBetID() {
 // Helper: Generate filename for Fivemanage with imageID
 function getFivemanageFilename(imageID, file) {
   const ext = getFileExtension(file.name);
-  return `GeneralsGamblingAdminImage_${imageID}.${ext}`;
+  return `GeneralsGamblingAdmin_${imageID}.${ext}`;
 }
 
 // Universal Fivemanage upload with custom filename
