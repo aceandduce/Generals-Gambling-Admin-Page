@@ -306,7 +306,7 @@ function renderForm() {
     const data = await res.json();
     if (res.ok) {
       if (data.newAccount) {
-        document.getElementById('formError').innerHTML = `Account not found but money added to name you've written (<b>${playerUsername}</b>). Remember usernames are case sensitve. Contact the general and he can fix the error. Sometimes the signup bugs out.`;
+        document.getElementById('formError').innerHTML = `Error, account name, (<b>${playerUsername}</b>) not found. Please contact the general to fix the error. Their money is still tracked by the name you've mistyped.`;
         document.getElementById('formError').style.color = 'red';
         document.getElementById('formSuccess').innerText = '';
       } else {
