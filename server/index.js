@@ -80,7 +80,36 @@ app.post('/api/submit', async (req, res) => {
       if (rows[i][0] === adminUsername) adminRow = i;
     }
     if (playerRow === -1) {
-      return res.status(404).json({ success: false, message: 'Please remember, usernames are case sensitive.' });
+      // Username not found: append to Players sheet
+      // Ensure amountToAdd is a number
+      const parsedAmount = parseFloat((amountToAdd + '').replace(/[^\d.\-]/g, ''));
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SHEET_ID,
+        range: `${SHEET_NAME}!A:B`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [[playerUsername, parsedAmount]]
+        }
+      });
+      // Track submission in Admin sheet as usual
+      const adminSheetName = 'Admin';
+      const now = new Date();
+      const formattedTime = now.toLocaleString('en-US', { hour12: false });
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SHEET_ID,
+        range: `${adminSheetName}!A:E`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [[
+            formattedTime, // Time
+            `=IMAGE("${proofImageUrl}")`, // Image formula
+            parsedAmount,    // Amount
+            playerUsername, // Player name
+            adminUsername   // Admin name
+          ]]
+        }
+      });
+      return res.json({ success: true, newAccount: true });
     }
     // Add amount to player
     const currentAmount = parseFloat(rows[playerRow][1] || '0');

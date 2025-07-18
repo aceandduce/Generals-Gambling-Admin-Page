@@ -10,6 +10,35 @@ const backendUrl = 'https://admin-site-ze7d.onrender.com'; // <-- Set your Rende
 const ODDS_API_KEY = 'df860f2526805007d06289b53d901e26'; // <-- Replace with your Odds API key
 const ODDS_API_BASE_URL = 'https://api.the-odds-api.com/v4';
 
+// --- Formatting Utilities ---
+function formatCurrencyInput(input) {
+  let value = input.value.replace(/[^\d]/g, '');
+  if (!value) {
+    input.value = '';
+    return;
+  }
+  value = parseInt(value, 10).toString();
+  input.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  if (input.value !== '') input.value = '$' + input.value;
+}
+
+function stripCurrencyFormatting(value) {
+  if (!value) return '';
+  return value.replace(/[^\d.\-]/g, '');
+}
+
+function formatPhoneInput(input) {
+  let value = input.value.replace(/[^\d]/g, '');
+  if (value.length > 10) value = value.slice(0, 10);
+  let formatted = value;
+  if (value.length > 6) {
+    formatted = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6);
+  } else if (value.length > 3) {
+    formatted = value.slice(0, 3) + '-' + value.slice(3);
+  }
+  input.value = formatted;
+}
+
 function renderLogin() {
   document.querySelector('#app').innerHTML = `
     <div class="login-container">
@@ -71,23 +100,19 @@ function generateBetID() {
   return 'PB-' + generateRandomString(10);
 }
 
-// Helper: Generate filename for Fivemanage with imageID
-function getFivemanageFilename(imageID, file) {
+// Helper: Generate prefixed filename for Fivemanage
+function getPrefixedFilename(file) {
   const ext = getFileExtension(file.name);
-  return `GeneralsGamblingAdmin_${imageID}.${ext}`;
+  return `GeneralsGamblingAdmin_${generateRandomString(12)}.${ext}`;
 }
 
-// Universal Fivemanage upload with custom filename
-async function uploadToFivemanageWithImageID(file, imageID) {
+// Universal Fivemanage upload for all sections
+async function uploadToFivemanageWithPrefix(file) {
   const fivemanageApiKey = 'tAhG8ZNH6lBSEf0xnJT2aOuDP7Jiu9u7';
-  const filename = getFivemanageFilename(imageID, file);
-  
-  // Create a new File object with the custom filename
-  const renamedFile = new File([file], filename, { type: file.type });
-  
+  const filename = getPrefixedFilename(file);
   const formData = new FormData();
-  formData.append('file', renamedFile);
-  formData.append('metadata', JSON.stringify({ name: filename, description: 'Proof image uploaded from Generals Gambling Admin.' }));
+  formData.append('file', file, filename);
+  formData.append('metadata', JSON.stringify({ name: filename }));
   const res = await fetch('https://fmapi.net/api/v2/image', {
     method: 'POST',
     headers: { 'Authorization': fivemanageApiKey },
@@ -194,7 +219,7 @@ function renderForm() {
         <label>Username of Player</label><br />
         <input type="text" id="playerUsername" required /><br />
         <label>Amount to Add</label><br />
-        <input type="number" id="amountToAdd" required /><br />
+        <input type="text" id="amountToAdd" required /><br />
         <label>Upload Proof of Purchase Here.</label><br />
         <input type="file" id="proofImage" accept="image/*" required /><br />
         <div style="font-size: 0.9em; color: #fff;">You can also paste an image from your clipboard.</div>
@@ -243,10 +268,14 @@ function renderForm() {
     }
   });
 
+  // Attach currency formatting
+  const amountToAddInput = document.getElementById('amountToAdd');
+  amountToAddInput.addEventListener('input', function() { formatCurrencyInput(this); });
+
   document.getElementById('playerForm').onsubmit = async (e) => {
     e.preventDefault();
     const playerUsername = document.getElementById('playerUsername').value;
-    const amountToAdd = document.getElementById('amountToAdd').value;
+    const amountToAdd = stripCurrencyFormatting(document.getElementById('amountToAdd').value);
     const proofImage = document.getElementById('proofImage').files[0];
     if (!proofImage) {
       document.getElementById('formError').innerText = 'Image required.';
@@ -254,8 +283,7 @@ function renderForm() {
     }
     let fivemanageUrl = '', fivemanageFilename = '';
     try {
-      const imageID = generateRandomString(12);
-      const { url, filename } = await uploadToFivemanageWithImageID(proofImage, imageID);
+      const { url, filename } = await uploadToFivemanageWithPrefix(proofImage);
       fivemanageUrl = url;
       fivemanageFilename = filename;
     } catch (err) {
@@ -275,12 +303,18 @@ function renderForm() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
+    const data = await res.json();
     if (res.ok) {
-      document.getElementById('formSuccess').innerText = 'Submitted successfully!';
-      document.getElementById('formError').innerText = '';
+      if (data.newAccount) {
+        document.getElementById('formError').innerHTML = `Account not found but money added to name you've written (<b>${playerUsername}</b>). Remember usernames are case sensitve. Contact the general and he can fix the error. Sometimes the signup bugs out.`;
+        document.getElementById('formError').style.color = 'red';
+        document.getElementById('formSuccess').innerText = '';
+      } else {
+        document.getElementById('formSuccess').innerText = 'Submitted successfully!';
+        document.getElementById('formError').innerText = '';
+      }
       document.getElementById('playerForm').reset();
     } else {
-      const data = await res.json();
       document.getElementById('formError').innerText = data.message || 'Submission failed.';
       document.getElementById('formSuccess').innerText = '';
     }
@@ -349,6 +383,10 @@ function renderRaffleTickets() {
     }
   });
 
+  // Attach phone formatting
+  const phoneInput = document.getElementById('phoneNumber');
+  phoneInput.addEventListener('input', function() { formatPhoneInput(this); });
+
   document.getElementById('raffleForm').onsubmit = async (e) => {
     e.preventDefault();
     const phoneNumber = document.getElementById('phoneNumber').value;
@@ -363,8 +401,7 @@ function renderRaffleTickets() {
     
     let fivemanageUrl = '', fivemanageFilename = '';
     try {
-      const imageID = generateRandomString(12);
-      const { url, filename } = await uploadToFivemanageWithImageID(proofImage, imageID);
+      const { url, filename } = await uploadToFivemanageWithPrefix(proofImage);
       fivemanageUrl = url;
       fivemanageFilename = filename;
     } catch (err) {
@@ -420,12 +457,10 @@ function renderPropBets() {
           <label>How to win the bet?</label><br />
           <input type="text" id="propHowToWin" placeholder="e.g. First to score 10 points" required /><br />
           <label>Amount to bet (+10% rake)</label><br />
-          <input type="number" id="propAmount" min="1" required /><br />
+          <input type="text" id="propAmount" min="1" required /><br />
           <label>Passcode (required to join later)</label><br />
           <input type="password" id="propPasscode" required /><br />
-          <label>Submit Proof of Purchase</label><br />
-          <label>Only needed for stateID bets, not usernames as they deduct automatically.</label><br />
-          <label>(can submit multiple at once)</label><br />          
+          <label>Submit Proof of Purchase (can submit multiple at once)</label><br />
           <input type="file" id="propProofImages" accept="image/*" multiple required /><br />
           <div style="font-size: 0.9em; color: #fff;">You can also paste images from your clipboard. <button type="button" id="propExampleBtn" style="margin-left:10px;">Example</button></div>
           <button type="submit">Submit Bet</button>
@@ -441,12 +476,14 @@ function renderPropBets() {
           </div>
         </div>
       </div>
+      <div id="propActiveDropdownContainer" style="margin-top:2rem; width:100%; max-width:500px;"></div>
     </div>
   `;
   document.getElementById('backToMenuBtn').onclick = () => { currentPage = 'menu'; renderMainMenu(); };
   document.getElementById('propExampleBtn').onclick = () => { document.getElementById('propExampleModal').style.display = 'flex'; };
   document.getElementById('closePropExampleModal').onclick = () => { document.getElementById('propExampleModal').style.display = 'none'; };
   document.getElementById('propBetForm').onsubmit = handlePropBetFormSubmit;
+  renderPropActiveDropdown();
 }
 
 // --- PROP BETS FULL IMPLEMENTATION ---
@@ -482,7 +519,7 @@ async function handlePropBetFormSubmit(e) {
   const playersRaw = document.getElementById('propPlayers').value.trim();
   const betName = document.getElementById('propBetName').value.trim();
   const howToWin = document.getElementById('propHowToWin').value.trim();
-  const amount = parseFloat(document.getElementById('propAmount').value);
+  const amount = parseFloat(stripCurrencyFormatting(document.getElementById('propAmount').value));
   const passcode = document.getElementById('propPasscode').value.trim();
   const proofFiles = Array.from(document.getElementById('propProofImages').files);
   const players = playersRaw.split(',').map(p => p.trim()).filter(Boolean);
@@ -493,12 +530,9 @@ async function handlePropBetFormSubmit(e) {
   document.getElementById('propFormError').innerText = '';
   document.getElementById('propFormSuccess').innerText = 'Uploading images...';
   let proofUploads = [];
-  const betID = generateBetID();
   try {
-    for (let i = 0; i < proofFiles.length; i++) {
-      const file = proofFiles[i];
-      const imageID = `${betID}_${i+1}`;
-      const { url, filename } = await uploadToFivemanageWithImageID(file, imageID);
+    for (const file of proofFiles) {
+      const { url, filename } = await uploadToFivemanageWithPrefix(file);
       proofUploads.push({ url, filename });
     }
   } catch (err) {
@@ -507,6 +541,7 @@ async function handlePropBetFormSubmit(e) {
     return;
   }
   // Prepare row for Google Sheets: [A-K+], now with filenames
+  const betID = generateBetID();
   const rake = Math.round(amount * 0.10 * 100) / 100;
   const totalPayout = Math.round((amount * players.length + rake) * 100) / 100;
   const now = new Date().toLocaleString();
@@ -524,6 +559,139 @@ async function handlePropBetFormSubmit(e) {
   document.getElementById('propFormSuccess').innerText = 'Prop bet submitted!';
   document.getElementById('propFormError').innerText = '';
   document.getElementById('propBetForm').reset();
+  renderPropActiveDropdown();
+}
+
+// --- Fetch and Render Active Bets Dropdown ---
+async function renderPropActiveDropdown() {
+  const res = await fetch(`${backendUrl}/api/active-prop-bets`);
+  const bets = res.ok ? await res.json() : [];
+  const container = document.getElementById('propActiveDropdownContainer');
+  container.innerHTML = `
+    <label for="propActiveDropdown">Join an Active Prop Bet:</label>
+    <input id="propActiveDropdown" list="propActiveList" placeholder="Search by bet name..." style="width:100%; padding:0.5rem;" />
+    <datalist id="propActiveList">
+      ${bets.map(bet => `<option value="${bet.betName}">${bet.betName} - ${bet.howToWin}</option>`).join('')}
+    </datalist>
+    <button id="propJoinBtn" style="margin-top:10px;">Join</button>
+    <div id="propJoinError" style="color:red;"></div>
+  `;
+  document.getElementById('propJoinBtn').onclick = () => handlePropJoin(bets);
+}
+
+// --- Join Modal Logic ---
+async function handlePropJoin(bets) {
+  const betName = document.getElementById('propActiveDropdown').value.trim();
+  const bet = bets.find(b => b.betName === betName);
+  if (!bet) {
+    document.getElementById('propJoinError').innerText = 'Bet not found.';
+    return;
+  }
+  // Show passcode modal
+  showPropJoinModal(bet);
+}
+
+function showPropJoinModal(bet) {
+  // Remove any existing modal
+  let modal = document.getElementById('propJoinModal');
+  if (modal) modal.remove();
+  // Modal HTML
+  modal = document.createElement('div');
+  modal.id = 'propJoinModal';
+  modal.style = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:2000;';
+  modal.innerHTML = `
+    <div style="background:#fff; padding:2rem; border-radius:10px; max-width:500px; width:90vw; max-height:90vh; overflow-y:auto; position:relative;">
+      <button id="closePropJoinModal" style="position:absolute; top:10px; right:15px; background:none; border:none; color:#333; font-size:1.5rem; cursor:pointer;">×</button>
+      <h3>${bet.betName}</h3>
+      <div style="margin-bottom:1rem;">How to win: <b>${bet.howToWin}</b></div>
+      <form id="propJoinPassForm">
+        <label>Enter Passcode:</label><br />
+        <input type="password" id="propJoinPasscode" required style="width:100%; margin-bottom:1rem;" />
+        <button type="submit">Check</button>
+        <div id="propJoinPassError" style="color:red;"></div>
+      </form>
+      <div id="propJoinDetails" style="display:none;"></div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById('closePropJoinModal').onclick = () => modal.remove();
+  document.getElementById('propJoinPassForm').onsubmit = (e) => {
+    e.preventDefault();
+    const pass = document.getElementById('propJoinPasscode').value;
+    if (pass !== bet.passcode) {
+      document.getElementById('propJoinPassError').innerText = 'Incorrect passcode.';
+      return;
+    }
+    document.getElementById('propJoinPassError').innerText = '';
+    showPropJoinDetails(bet, modal);
+  };
+}
+
+function showPropJoinDetails(bet, modal) {
+  const details = document.getElementById('propJoinDetails');
+  details.style.display = 'block';
+  details.innerHTML = `
+    <div style="margin-bottom:1rem;">Current Players: <b>${bet.players}</b></div>
+    <div style="margin-bottom:1rem;">Total Payout: <b>${bet.totalPayout}</b></div>
+    <form id="propAddToBetForm">
+      <label>Usernames/StateIDs (comma separated):</label><br />
+      <textarea id="propAddPlayers" placeholder="e.g. john_doe, 123456" required style="width:100%; min-height:40px;"></textarea><br />
+      <label>Submit Proof of Purchase (multiple):</label><br />
+      <input type="file" id="propAddProofImages" accept="image/*" multiple required /><br />
+      <button type="submit">Add to Bet</button>
+      <div id="propAddToBetError" style="color:red;"></div>
+      <div id="propAddToBetSuccess" style="color:green;"></div>
+    </form>
+  `;
+  document.getElementById('propAddToBetForm').onsubmit = (e) => handleAddToPropBet(e, bet, modal);
+}
+
+async function handleAddToPropBet(e, bet, modal) {
+  e.preventDefault();
+  const addPlayersRaw = document.getElementById('propAddPlayers').value.trim();
+  const addProofFiles = Array.from(document.getElementById('propAddProofImages').files);
+  const addPlayers = addPlayersRaw.split(',').map(p => p.trim()).filter(Boolean);
+  if (!addPlayers.length || !addProofFiles.length) {
+    document.getElementById('propAddToBetError').innerText = 'All fields required.';
+    return;
+  }
+  document.getElementById('propAddToBetError').innerText = '';
+  document.getElementById('propAddToBetSuccess').innerText = 'Uploading images...';
+  let proofUrls = [];
+  try {
+    for (const file of addProofFiles) {
+      const url = await uploadToFivemanage(file);
+      proofUrls.push(url);
+    }
+  } catch (err) {
+    document.getElementById('propAddToBetError').innerText = err.message;
+    document.getElementById('propAddToBetSuccess').innerText = '';
+    return;
+  }
+  // Deduct balance for usernames in Players sheet
+  const allPlayers = await fetchPlayers();
+  for (const player of addPlayers) {
+    const isUsername = allPlayers.some(p => p.username === player);
+    if (isUsername) {
+      await deductPlayerBalance(player, bet.amount);
+    }
+    // If not username (assume stateID), require proof (already enforced by UI: one proof per player)
+  }
+  // Update backend/Google Sheets: append new players and proof images, update payout
+  await fetch(`${backendUrl}/api/join-prop-bet`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      betID: bet.betID,
+      addPlayers: addPlayers.join(','),
+      addProofUrls: proofUrls
+    })
+  });
+  document.getElementById('propAddToBetSuccess').innerText = 'Added to bet!';
+  document.getElementById('propAddToBetError').innerText = '';
+  document.getElementById('propAddToBetForm').reset();
+  setTimeout(() => modal.remove(), 2000);
+  renderPropActiveDropdown();
 }
 
 // Sports betting functions
@@ -680,7 +848,7 @@ function displayOdds(sportData) {
           </div>
           <div style="margin-bottom:1rem;">
             <label style="display:block; margin-bottom:0.5rem; color:#fff;">Amount Bet:</label>
-            <input type="number" id="bettingAmount" required style="width:100%; padding:0.5rem; border-radius:5px; border:1px solid #444; background:#333; color:#fff;" />
+            <input type="text" id="bettingAmount" required style="width:100%; padding:0.5rem; border-radius:5px; border:1px solid #444; background:#333; color:#fff;" />
           </div>
           <div style="margin-bottom:1rem;">
             <label style="display:block; margin-bottom:0.5rem; color:#fff;">Team Selection:</label>
@@ -750,6 +918,10 @@ function displayOdds(sportData) {
     document.getElementById('bettingExampleModal').style.display = 'flex';
   });
   
+  // Attach currency formatting
+  const bettingAmountInput = document.getElementById('bettingAmount');
+  bettingAmountInput.addEventListener('input', function() { formatCurrencyInput(this); });
+
   // Add paste event for betting form
   const bettingProofImageInput = document.getElementById('bettingProofImage');
   document.getElementById('bettingForm').addEventListener('paste', (event) => {
@@ -863,7 +1035,7 @@ async function handleBettingFormSubmit(e) {
   }
   
   const username = document.getElementById('bettingUsername').value;
-  const amount = document.getElementById('bettingAmount').value;
+  const amount = stripCurrencyFormatting(document.getElementById('bettingAmount').value);
   const proofImage = document.getElementById('bettingProofImage').files[0];
   
   if (!proofImage) {
@@ -877,8 +1049,7 @@ async function handleBettingFormSubmit(e) {
   
   let fivemanageUrl = '', fivemanageFilename = '';
   try {
-    const imageID = generateRandomString(12);
-    const { url, filename } = await uploadToFivemanageWithImageID(proofImage, imageID);
+    const { url, filename } = await uploadToFivemanageWithPrefix(proofImage);
     fivemanageUrl = url;
     fivemanageFilename = filename;
   } catch (err) {
