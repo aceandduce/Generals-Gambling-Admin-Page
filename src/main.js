@@ -306,7 +306,7 @@ function renderForm() {
     const data = await res.json();
     if (res.ok) {
       if (data.newAccount) {
-        document.getElementById('formError').innerHTML = `Error, account name, (<b>${playerUsername}</b>) not found. <br /> Please contact the general to fix the error. <br /> Their money is still tracked to<b>${playerUsername}</b>) for now.`;
+        document.getElementById('formError').innerHTML = `Error, account name, (<b>${playerUsername}</b>) not found. <br /> Please contact the general to fix the error. <br /> Their money is still tracked to (<b>${playerUsername}</b>) for now.`;
         document.getElementById('formError').style.color = 'red';
         document.getElementById('formSuccess').innerText = '';
       } else {
