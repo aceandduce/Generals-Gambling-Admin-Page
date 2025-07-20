@@ -432,19 +432,8 @@ app.post('/api/submit-prop-bet', async (req, res) => {
       }
     }
     
-    // --- Add half of the rake to admin's balance if they exist in Players sheet ---
-    const adminRow = playerRows.findIndex(r => r[0] === adminUsername);
-    if (adminRow !== -1) {
-      const adminCurrent = parseFloat(playerRows[adminRow][1] || '0');
-      const adminBonus = adminCurrent + (rake / 2); // Half of the rake
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: SHEET_ID,
-        range: `${playersSheetName}!B${adminRow + 2}`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values: [[adminBonus]] },
-      });
-      console.log(`Added ${rake / 2} to admin ${adminUsername} for prop bet rake`);
-    }
+    // --- Track admin username for later payout distribution ---
+    console.log(`Prop bet created by admin ${adminUsername} - rake will be distributed upon settlement`);
     
     return res.json({ success: true });
   } catch (err) {
