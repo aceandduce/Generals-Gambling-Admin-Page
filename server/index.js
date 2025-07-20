@@ -393,16 +393,16 @@ app.post('/api/submit-prop-bet', async (req, res) => {
     row[4] = rake; // update rake
     row[8] = pot;  // update pot/totalPayout
     
-    // --- Add admin username to the row (after totalPayout) ---
+    // --- Add admin username to the row (after status) ---
     const adminColumn = adminUsername;
-    row.splice(9, 0, adminColumn); // Insert admin username at position 9 (after totalPayout)
+    row.splice(10, 0, adminColumn); // Insert admin username at position 10 (after status)
     
     // --- Only append image URLs (not filenames) ---
-    // Assume proofUrls are from index 11 to 11+N, proofFilenames after that (adjusted for admin column)
-    const proofCount = (row.length - 11) / 2;
-    const proofUrls = row.slice(11, 11 + proofCount);
-    // Compose the row for the sheet: [A-K, ...proofUrls] (K includes admin column)
-    const sheetRow = row.slice(0, 11).concat(proofUrls);
+    // Assume proofUrls are from index 12 to 12+N, proofFilenames after that (adjusted for admin column)
+    const proofCount = (row.length - 12) / 2;
+    const proofUrls = row.slice(12, 12 + proofCount);
+    // Compose the row for the sheet: [A-L, ...proofUrls] (L includes admin column)
+    const sheetRow = row.slice(0, 12).concat(proofUrls);
     
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
