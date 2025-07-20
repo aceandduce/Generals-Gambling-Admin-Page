@@ -158,13 +158,19 @@ function renderMainMenu() {
       <div style="margin-bottom: 2rem; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 8px;">
         <label for="sheetSelect" style="display: block; margin-bottom: 0.5rem; color: #fff; font-weight: bold;">Swap Whiteboard to:</label>
         <select id="sheetSelect" style="width: 100%; padding: 0.5rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #444; background: #333; color: #fff;">
-          <option value="">Select a sheet...</option>
-          <option value="Players">Players</option>
-          <option value="SportsBets">Sports Bets</option>
-          <option value="RaffleTickets">Raffle Tickets</option>
-          <option value="PropBets">Prop Bets</option>
-          <option value="Whiteboard">Whiteboard</option>
-        </select>
+          <option value="Landing">Landing/Main Page</option>
+          <option value="Trivia">Triva</option>
+          <option value="ScratchCard">Scratch Cards</option>
+          <option value="Plinko">Plinko</option>
+          <option value="Money Ladder">Money Ladder</option>
+          <option value="Blackjack">Blackjack</option>
+          <option value="High/Low">High / Low</option>
+          <option value="Mines">Mines</option>
+          <option value="Keno">Keno</option>
+          <option value="Connect 4">Connect 4</option>
+          <option value="Prize Wheel">Prize Wheel</option>
+          <option value="Snails">Snail Racing</option>                           
+          </select>
         <button id="swapSheetBtn" class="menu-button" style="width: 100%;">Swap</button>
         <div id="swapStatus" style="margin-top: 0.5rem; font-size: 0.9em;"></div>
       </div>
@@ -646,7 +652,10 @@ async function handlePropBetFormSubmit(e) {
   await fetch(`${backendUrl}/api/submit-prop-bet`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ row })
+    body: JSON.stringify({ 
+      row,
+      adminUsername: loggedInUsername 
+    })
   });
   document.getElementById('propFormSuccess').innerText = 'Prop bet submitted!';
   document.getElementById('propFormError').innerText = '';

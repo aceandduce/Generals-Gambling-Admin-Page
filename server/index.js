@@ -120,7 +120,7 @@ app.post('/api/submit', async (req, res) => {
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [[newAmount]] },
     });
-    // Add 2% to admin if admin is in the sheet
+    // Add 1% to admin if admin is in the sheet
     if (adminRow !== -1) {
       const adminCurrent = parseFloat(rows[adminRow][1] || '0');
       const adminBonus = adminCurrent + (parseFloat(amountToAdd) * 0.01);
@@ -366,14 +366,24 @@ app.post('/api/submit-prop-bet', async (req, res) => {
   /*
     Expects req.body.row to be an array:
     [betID, betName, howToWin, amount, rake, passcode, playersCSV, now, totalPayout, 'active', ...proofUrls, ...proofFilenames]
+    And req.body.adminUsername for tracking the admin
   */
   const row = req.body.row;
+  const adminUsername = req.body.adminUsername;
+  
   if (!row || row.length < 10) {
     return res.status(400).json({ success: false, message: 'Invalid prop bet data.' });
   }
+  
+  if (!adminUsername) {
+    return res.status(400).json({ success: false, message: 'Admin username required.' });
+  }
+  
   try {
     const sheets = getSheetsClient();
     const propBetsSheetName = 'Prop Bets';
+    const playersSheetName = 'Players';
+    
     // --- Fix rake and pot calculation ---
     const amount = parseFloat(row[3]);
     const players = row[6].split(',').map(p => p.trim()).filter(Boolean);
@@ -382,25 +392,32 @@ app.post('/api/submit-prop-bet', async (req, res) => {
     const pot = Math.round((totalBet - rake) * 100) / 100;
     row[4] = rake; // update rake
     row[8] = pot;  // update pot/totalPayout
+    
+    // --- Add admin username to the row (after totalPayout) ---
+    const adminColumn = adminUsername;
+    row.splice(9, 0, adminColumn); // Insert admin username at position 9 (after totalPayout)
+    
     // --- Only append image URLs (not filenames) ---
-    // Assume proofUrls are from index 10 to 10+N, proofFilenames after that
-    const proofCount = (row.length - 10) / 2;
-    const proofUrls = row.slice(10, 10 + proofCount);
-    // Compose the row for the sheet: [A-J, ...proofUrls]
-    const sheetRow = row.slice(0, 10).concat(proofUrls);
+    // Assume proofUrls are from index 11 to 11+N, proofFilenames after that (adjusted for admin column)
+    const proofCount = (row.length - 11) / 2;
+    const proofUrls = row.slice(11, 11 + proofCount);
+    // Compose the row for the sheet: [A-K, ...proofUrls] (K includes admin column)
+    const sheetRow = row.slice(0, 11).concat(proofUrls);
+    
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
       range: `${propBetsSheetName}!A:Z`,
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [sheetRow] }
     });
+    
     // --- Deduct from each username in Players sheet ---
-    const playersSheetName = 'Players';
     const readRes = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
       range: `${playersSheetName}!A2:B`,
     });
     const playerRows = readRes.data.values || [];
+    
     for (const username of players) {
       const idx = playerRows.findIndex(r => r[0] === username);
       if (idx !== -1) {
@@ -414,6 +431,21 @@ app.post('/api/submit-prop-bet', async (req, res) => {
         });
       }
     }
+    
+    // --- Add half of the rake to admin's balance if they exist in Players sheet ---
+    const adminRow = playerRows.findIndex(r => r[0] === adminUsername);
+    if (adminRow !== -1) {
+      const adminCurrent = parseFloat(playerRows[adminRow][1] || '0');
+      const adminBonus = adminCurrent + (rake / 2); // Half of the rake
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `${playersSheetName}!B${adminRow + 2}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [[adminBonus]] },
+      });
+      console.log(`Added ${rake / 2} to admin ${adminUsername} for prop bet rake`);
+    }
+    
     return res.json({ success: true });
   } catch (err) {
     console.error('Error in /api/submit-prop-bet:', err);
