@@ -153,6 +153,22 @@ function renderMainMenu() {
     <div class="menu-container">
       <h2>Admin Dashboard</h2>
       <p>Welcome, ${loggedInUsername}!</p>
+      
+      <!-- Sheet Swapping Section -->
+      <div style="margin-bottom: 2rem; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 8px;">
+        <label for="sheetSelect" style="display: block; margin-bottom: 0.5rem; color: #fff; font-weight: bold;">Swap Whiteboard to:</label>
+        <select id="sheetSelect" style="width: 100%; padding: 0.5rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #444; background: #333; color: #fff;">
+          <option value="">Select a sheet...</option>
+          <option value="Players">Players</option>
+          <option value="SportsBets">Sports Bets</option>
+          <option value="RaffleTickets">Raffle Tickets</option>
+          <option value="PropBets">Prop Bets</option>
+          <option value="Whiteboard">Whiteboard</option>
+        </select>
+        <button id="swapSheetBtn" class="menu-button" style="width: 100%;">Swap</button>
+        <div id="swapStatus" style="margin-top: 0.5rem; font-size: 0.9em;"></div>
+      </div>
+      
       <div class="menu-buttons">
         <button id="addFundsBtn" class="menu-button">Add Funds</button>
         <button id="sportsBetsBtn" class="menu-button">Take Sports Bets</button>
@@ -162,11 +178,87 @@ function renderMainMenu() {
       <button id="logoutBtn" class="logout-button">Logout</button>
     </div>
   `;
+  
+  // Add event listeners
   document.getElementById('addFundsBtn').onclick = () => { currentPage = 'addFunds'; renderForm(); };
   document.getElementById('sportsBetsBtn').onclick = () => { currentPage = 'sportsBets'; renderSportsBets(); };
   document.getElementById('raffleTicketsBtn').onclick = () => { currentPage = 'raffleTickets'; renderRaffleTickets(); };
   document.getElementById('propBetsBtn').onclick = () => { currentPage = 'propBets'; renderPropBets(); };
   document.getElementById('logoutBtn').onclick = () => { loggedIn = false; loggedInUsername = ''; currentPage = 'menu'; renderLogin(); };
+  document.getElementById('swapSheetBtn').onclick = handleSheetSwap;
+}
+
+// Sheet swapping functionality
+async function handleSheetSwap() {
+  const selectedSheet = document.getElementById('sheetSelect').value;
+  const statusDiv = document.getElementById('swapStatus');
+  
+  if (!selectedSheet) {
+    statusDiv.innerHTML = '<span style="color: orange;">Please select a sheet first.</span>';
+    return;
+  }
+  
+  statusDiv.innerHTML = '<span style="color: blue;">Swapping sheets...</span>';
+  
+  try {
+    // First try to call the Google Apps Script function
+    const response = await fetch(`${backendUrl}/api/swap-sheet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        targetSheet: selectedSheet,
+        adminUsername: loggedInUsername 
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      if (data.success) {
+        statusDiv.innerHTML = `<span style="color: green;">✓ Successfully swapped to ${selectedSheet} sheet!</span>`;
+      } else {
+        // If Google Apps Script failed, try the fallback method
+        await handleSheetSwapFallback(selectedSheet);
+        statusDiv.innerHTML = `<span style="color: green;">✓ Successfully swapped to ${selectedSheet} sheet (fallback method)!</span>`;
+      }
+    } else {
+      // If backend call failed, try the fallback method
+      await handleSheetSwapFallback(selectedSheet);
+      statusDiv.innerHTML = `<span style="color: green;">✓ Successfully swapped to ${selectedSheet} sheet (fallback method)!</span>`;
+    }
+  } catch (error) {
+    console.error('Sheet swap error:', error);
+    // Try fallback method
+    try {
+      await handleSheetSwapFallback(selectedSheet);
+      statusDiv.innerHTML = `<span style="color: green;">✓ Successfully swapped to ${selectedSheet} sheet (fallback method)!</span>`;
+    } catch (fallbackError) {
+      statusDiv.innerHTML = '<span style="color: red;">✗ Failed to swap sheets. Please try again.</span>';
+    }
+  }
+  
+  // Clear status after 3 seconds
+  setTimeout(() => {
+    statusDiv.innerHTML = '';
+  }, 3000);
+}
+
+async function handleSheetSwapFallback(targetSheet) {
+  // Fallback method: Use Google Sheets API to show/hide sheets
+  const response = await fetch(`${backendUrl}/api/swap-sheet-fallback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      targetSheet: targetSheet,
+      adminUsername: loggedInUsername 
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error('Fallback sheet swap failed');
+  }
+  
+  return await response.json();
 }
 
 function renderSportsBets() {

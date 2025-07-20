@@ -459,6 +459,121 @@ app.get('/api/active-prop-bets', async (req, res) => {
   }
 });
 
+// === SHEET SWAPPING ENDPOINTS ===
+
+// POST /api/swap-sheet - Try to call Google Apps Script function
+app.post('/api/swap-sheet', async (req, res) => {
+  const { targetSheet, adminUsername } = req.body;
+  
+  if (!targetSheet || !adminUsername) {
+    return res.status(400).json({ success: false, message: 'Target sheet and admin username required.' });
+  }
+
+  try {
+    const sheets = getSheetsClient();
+    
+    // Try to call the Google Apps Script function toggleToSheet
+    // This would require the Apps Script to be deployed as a web app
+    // For now, we'll return false to trigger the fallback method
+    console.log(`Attempting to swap to sheet: ${targetSheet} by admin: ${adminUsername}`);
+    
+    // Note: In a real implementation, you would call the Apps Script web app here
+    // For now, we'll return false to use the fallback method
+    return res.json({ success: false, message: 'Google Apps Script not available, using fallback method.' });
+    
+  } catch (err) {
+    console.error('Error in /api/swap-sheet:', err);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// POST /api/swap-sheet-fallback - Use Google Sheets API to show/hide sheets
+app.post('/api/swap-sheet-fallback', async (req, res) => {
+  const { targetSheet, adminUsername } = req.body;
+  
+  if (!targetSheet || !adminUsername) {
+    return res.status(400).json({ success: false, message: 'Target sheet and admin username required.' });
+  }
+
+  try {
+    const sheets = getSheetsClient();
+    
+    // Get all sheets in the spreadsheet
+    const spreadsheet = await sheets.spreadsheets.get({
+      spreadsheetId: SHEET_ID,
+      includeGridData: false
+    });
+    
+    const sheetList = spreadsheet.data.sheets;
+    let targetSheetId = null;
+    let visibleSheets = [];
+    
+    // Find the target sheet and identify currently visible sheets
+    for (const sheet of sheetList) {
+      if (sheet.properties.title === targetSheet) {
+        targetSheetId = sheet.properties.sheetId;
+      }
+      if (!sheet.properties.hidden) {
+        visibleSheets.push(sheet.properties.sheetId);
+      }
+    }
+    
+    if (!targetSheetId) {
+      return res.status(400).json({ success: false, message: `Sheet "${targetSheet}" not found.` });
+    }
+    
+    // Prepare batch update requests
+    const requests = [];
+    
+    // If only one sheet is visible and it's the target sheet, do nothing
+    if (visibleSheets.length === 1 && visibleSheets[0] === targetSheetId) {
+      return res.json({ success: true, message: `Sheet "${targetSheet}" is already the only visible sheet.` });
+    }
+    
+    // Hide all sheets except the target sheet
+    for (const sheet of sheetList) {
+      const sheetId = sheet.properties.sheetId;
+      if (sheetId !== targetSheetId) {
+        requests.push({
+          updateSheetProperties: {
+            properties: {
+              sheetId: sheetId,
+              hidden: true
+            },
+            fields: 'hidden'
+          }
+        });
+      }
+    }
+    
+    // Show the target sheet
+    requests.push({
+      updateSheetProperties: {
+        properties: {
+          sheetId: targetSheetId,
+          hidden: false
+        },
+        fields: 'hidden'
+      }
+    });
+    
+    // Execute the batch update
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SHEET_ID,
+      requestBody: {
+        requests: requests
+      }
+    });
+    
+    console.log(`Successfully swapped to sheet: ${targetSheet} by admin: ${adminUsername}`);
+    return res.json({ success: true, message: `Successfully swapped to "${targetSheet}" sheet.` });
+    
+  } catch (err) {
+    console.error('Error in /api/swap-sheet-fallback:', err);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
