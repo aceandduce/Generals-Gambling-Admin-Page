@@ -158,23 +158,30 @@ app.post('/api/submit', async (req, res) => {
   }
 });
 
+
 // Sports betting submission endpoint
 app.post('/api/submit-sports-bet', async (req, res) => {
-  const { 
-    username, 
-    amountBet, 
-    eventName, 
-    eventTime, 
-    betType, 
-    selectedTeam, 
-    odds, 
-    line, 
+  const {
+    username,
+    amountBet,
+    eventName,
+    eventTime,
+    betType,
+    selectedTeam,
+    odds,
+    line,
     proofImageUrl,
     adminUsername
   } = req.body;
 
   if (!username || !amountBet || !eventName || !eventTime || !betType || !selectedTeam || !odds || !proofImageUrl || !adminUsername) {
     return res.status(400).json({ success: false, message: 'All fields required.' });
+  }
+
+  // Enforce sports bet maximum from environment variable
+  const SPORTS_BET_MAX = parseFloat(process.env.SPORTS_BET_MAX || '1000');
+  if (parseFloat(amountBet) > SPORTS_BET_MAX) {
+    return res.status(400).json({ success: false, message: `Bet exceeds maximum allowed of $${SPORTS_BET_MAX}.` });
   }
 
   try {
