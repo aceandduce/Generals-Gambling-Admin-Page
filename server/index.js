@@ -178,10 +178,22 @@ app.post('/api/submit-sports-bet', async (req, res) => {
     return res.status(400).json({ success: false, message: 'All fields required.' });
   }
 
+
   // Enforce sports bet maximum from environment variable
   const SPORTS_BET_MAX = parseFloat(process.env.SPORTS_BET_MAX || '1000');
   if (parseFloat(amountBet) > SPORTS_BET_MAX) {
     return res.status(400).json({ success: false, message: `Bet exceeds maximum allowed of $${SPORTS_BET_MAX}.` });
+  }
+
+  // Reject long shot odds
+  if (parseFloat(odds) > 10) {
+    return res.status(400).json({ success: false, message: 'No long shots.' });
+  }
+
+  // Update betType for Moneyline
+  let betTypeToSave = betType;
+  if (typeof betType === 'string' && betType.trim().toLowerCase() === 'moneyline') {
+    betTypeToSave = 'Moneyline/h2h';
   }
 
   try {
@@ -226,7 +238,7 @@ app.post('/api/submit-sports-bet', async (req, res) => {
           selectedTeam,     // Selected Team
           eventName,        // Event Name
           eventTime,        // Event Time
-          betType,          // Bet Type (Moneyline, Spread, Total)
+          betTypeToSave,    // Bet Type (Moneyline/h2h, Spread, Total)
           odds,             // Odds
           line || '',       // Line (for spreads/totals)
           adminUsername,    // Admin who processed the bet
