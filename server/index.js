@@ -618,8 +618,13 @@ app.post('/api/swap-sheet-fallback', async (req, res) => {
 app.post('/api/set-active-player', async (req, res) => {
   const { playerName, adminUsername } = req.body;
   try {
+    // Get all player usernames from the Players sheet
+    const players = await getPlayersFromSheet(); // Implement this helper to read column A
+    const usernames = players.map(p => p.username);
+    if (!usernames.includes(playerName)) {
+      return res.status(400).json({ success: false, message: 'Player not found' });
+    }
     // Call Google Apps Script function setActivePlayer(playerName)
-    // Replace with your actual Apps Script API call
     const scriptResponse = await callGoogleAppsScript('setActivePlayer', { playerName, adminUsername });
     if (scriptResponse.success) {
       res.json({ success: true });
@@ -630,6 +635,18 @@ app.post('/api/set-active-player', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
+// Helper to get all players from the Players sheet
+async function getPlayersFromSheet() {
+  // Use Google Sheets API to read column A of "Players" sheet
+  // Example:
+  // const sheetId = 'YOUR_SHEET_ID';
+  // const range = 'Players!A:A';
+  // const response = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range });
+  // return response.data.values.map(row => ({ username: row[0] }));
+  // For now, mock:
+  return [{ username: 'john_doe' }, { username: 'jane_smith' }];
+}
 
 // Helper to call Google Apps Script
 async function callGoogleAppsScript(functionName, params) {

@@ -202,12 +202,15 @@ function renderMainMenu() {
   document.getElementById('logoutBtn').onclick = () => { loggedIn = false; loggedInUsername = ''; currentPage = 'menu'; renderLogin(); };
   document.getElementById('swapSheetBtn').onclick = handleSheetSwap;
 
+  let playerUsernames = [];
+
   // Fetch player names for dropdown
   fetch(`${backendUrl}/api/players`)
     .then(res => res.json())
     .then(players => {
       const datalist = document.getElementById('playerList');
-      datalist.innerHTML = players.map(p => `<option value="${p.username}"></option>`).join('');
+      playerUsernames = players.map(p => p.username);
+      datalist.innerHTML = playerUsernames.map(name => `<option value="${name}"></option>`).join('');
     });
 
   // Set active player handler
@@ -216,6 +219,11 @@ function renderMainMenu() {
     const statusDiv = document.getElementById('activePlayerStatus');
     if (!playerName) {
       statusDiv.innerHTML = '<span style="color: orange;">Please select a player first.</span>';
+      return;
+    }
+    if (!playerUsernames.includes(playerName)) {
+      statusDiv.innerHTML = '<span style="color: orange;">Player not found. Please select from the dropdown.</span>';
+      setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
       return;
     }
     statusDiv.innerHTML = '<span style="color: blue;">Setting active player...</span>';
