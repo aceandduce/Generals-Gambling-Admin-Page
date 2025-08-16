@@ -1277,4 +1277,3 @@ if (!loggedIn) {
 } else {
   renderMainMenu();
 }
-}
