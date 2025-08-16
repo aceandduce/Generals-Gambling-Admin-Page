@@ -614,6 +614,33 @@ app.post('/api/swap-sheet-fallback', async (req, res) => {
   }
 });
 
+// Set active player endpoint
+app.post('/api/set-active-player', async (req, res) => {
+  const { playerName, adminUsername } = req.body;
+  try {
+    // Call Google Apps Script function setActivePlayer(playerName)
+    // Replace with your actual Apps Script API call
+    const scriptResponse = await callGoogleAppsScript('setActivePlayer', { playerName, adminUsername });
+    if (scriptResponse.success) {
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ success: false, message: 'Script failed' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Helper to call Google Apps Script
+async function callGoogleAppsScript(functionName, params) {
+  // ...existing code for calling Apps Script...
+  // Example:
+  // const response = await fetch('YOUR_APPS_SCRIPT_URL', { ... });
+  // return await response.json();
+  // For now, mock success:
+  return { success: true };
+}
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

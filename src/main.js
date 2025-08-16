@@ -170,11 +170,20 @@ function renderMainMenu() {
           <option value="Connect 4">Connect 4</option>
           <option value="Prize Wheel">Prize Wheel</option>
           <option value="Snails">Snail Racing</option>                           
-          </select>
+        </select>
         <button id="swapSheetBtn" class="menu-button" style="width: 100%;">Swap</button>
         <div id="swapStatus" style="margin-top: 0.5rem; font-size: 0.9em;"></div>
       </div>
-      
+
+      <!-- Player Selection Section -->
+      <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.07); border-radius: 8px;">
+        <label for="playerSelect" style="display: block; margin-bottom: 0.5rem; color: #fff; font-weight: bold;">Set Active Player:</label>
+        <input id="playerSelect" list="playerList" placeholder="Search player..." style="width:100%; padding:0.5rem; border-radius:5px; border:1px solid #444; background:#333; color:#fff;" />
+        <datalist id="playerList"></datalist>
+        <button id="setActivePlayerBtn" class="menu-button" style="width:100%; margin-top:0.5rem;">Set Active Player</button>
+        <div id="activePlayerStatus" style="margin-top:0.5rem; font-size:0.9em;"></div>
+      </div>
+
       <div class="menu-buttons">
         <button id="addFundsBtn" class="menu-button">Add Funds</button>
         <button id="sportsBetsBtn" class="menu-button">Take Sports Bets</button>
@@ -192,6 +201,41 @@ function renderMainMenu() {
   document.getElementById('propBetsBtn').onclick = () => { currentPage = 'propBets'; renderPropBets(); };
   document.getElementById('logoutBtn').onclick = () => { loggedIn = false; loggedInUsername = ''; currentPage = 'menu'; renderLogin(); };
   document.getElementById('swapSheetBtn').onclick = handleSheetSwap;
+
+  // Fetch player names for dropdown
+  fetch(`${backendUrl}/api/players`)
+    .then(res => res.json())
+    .then(players => {
+      const datalist = document.getElementById('playerList');
+      datalist.innerHTML = players.map(p => `<option value="${p.username}"></option>`).join('');
+    });
+
+  // Set active player handler
+  document.getElementById('setActivePlayerBtn').onclick = async () => {
+    const playerName = document.getElementById('playerSelect').value.trim();
+    const statusDiv = document.getElementById('activePlayerStatus');
+    if (!playerName) {
+      statusDiv.innerHTML = '<span style="color: orange;">Please select a player first.</span>';
+      return;
+    }
+    statusDiv.innerHTML = '<span style="color: blue;">Setting active player...</span>';
+    try {
+      const res = await fetch(`${backendUrl}/api/set-active-player`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerName, adminUsername: loggedInUsername })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        statusDiv.innerHTML = `<span style="color: green;">✓ Active player set to ${playerName}!</span>`;
+      } else {
+        statusDiv.innerHTML = `<span style="color: red;">✗ Failed to set active player.</span>`;
+      }
+    } catch (err) {
+      statusDiv.innerHTML = `<span style="color: red;">✗ Error setting active player.</span>`;
+    }
+    setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
+  };
 }
 
 // Sheet swapping functionality
