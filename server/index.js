@@ -660,12 +660,10 @@ async function getPlayersFromSheet() {
 
 // Helper to call Google Apps Script
 async function callGoogleAppsScript(functionName, params) {
-  // Replace with your deployed Apps Script web app URL
-  const scriptUrl = process.env.APPS_SCRIPT_URL; // e.g. 'https://script.google.com/macros/s/AKfycb.../exec'
+  const scriptUrl = process.env.APPS_SCRIPT_URL;
   if (!scriptUrl) {
     throw new Error('Apps Script URL not configured');
   }
-  // Send function name and params as POST body
   const response = await fetch(scriptUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -674,11 +672,14 @@ async function callGoogleAppsScript(functionName, params) {
       parameters: params
     })
   });
-  if (!response.ok) {
-    return { success: false, message: 'Apps Script call failed' };
+  const rawText = await response.text();
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch (err) {
+    console.error('Apps Script returned non-JSON:', rawText);
+    return { success: false, message: 'Apps Script did not return JSON', raw: rawText };
   }
-  const data = await response.json();
-  // Expect { success: true } from your Apps Script
   return data;
 }
 
