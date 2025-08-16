@@ -638,14 +638,16 @@ app.post('/api/set-active-player', async (req, res) => {
 
 // Helper to get all players from the Players sheet
 async function getPlayersFromSheet() {
-  // Use Google Sheets API to read column A of "Players" sheet
-  // Example:
-  // const sheetId = 'YOUR_SHEET_ID';
-  // const range = 'Players!A:A';
-  // const response = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range });
-  // return response.data.values.map(row => ({ username: row[0] }));
-  // For now, mock:
-  return [{ username: 'john_doe' }, { username: 'jane_smith' }];
+  const sheets = getSheetsClient();
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: `${SHEET_NAME}!A2:A`,
+  });
+  const values = response.data.values || [];
+  return values
+    .map(row => row[0])
+    .filter(name => !!name)
+    .map(name => ({ username: name }));
 }
 
 // Helper to call Google Apps Script
