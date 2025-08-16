@@ -149,6 +149,9 @@ async function uploadToFivemanage(file) {
 
 // 3. Add Prop Bets button to main menu
 function renderMainMenu() {
+  // ...existing code...
+  let playerUsernames = [];
+
   document.querySelector('#app').innerHTML = `
     <div class="menu-container">
       <h2>Admin Dashboard</h2>
@@ -178,8 +181,9 @@ function renderMainMenu() {
       <!-- Player Selection Section -->
       <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.07); border-radius: 8px;">
         <label for="playerSelect" style="display: block; margin-bottom: 0.5rem; color: #fff; font-weight: bold;">Set Active Player:</label>
-        <input id="playerSelect" list="playerList" placeholder="Search player..." style="width:100%; padding:0.5rem; border-radius:5px; border:1px solid #444; background:#333; color:#fff;" />
-        <datalist id="playerList"></datalist>
+        <select id="playerSelect" style="width:100%; padding:0.5rem; border-radius:5px; border:1px solid #444; background:#333; color:#fff;">
+          <option value="">Loading players...</option>
+        </select>
         <button id="setActivePlayerBtn" class="menu-button" style="width:100%; margin-top:0.5rem;">Set Active Player</button>
         <div id="activePlayerStatus" style="margin-top:0.5rem; font-size:0.9em;"></div>
       </div>
@@ -202,28 +206,23 @@ function renderMainMenu() {
   document.getElementById('logoutBtn').onclick = () => { loggedIn = false; loggedInUsername = ''; currentPage = 'menu'; renderLogin(); };
   document.getElementById('swapSheetBtn').onclick = handleSheetSwap;
 
-  let playerUsernames = [];
-
   // Fetch player names for dropdown
   fetch(`${backendUrl}/api/players`)
     .then(res => res.json())
     .then(players => {
-      const datalist = document.getElementById('playerList');
       playerUsernames = players.map(p => p.username);
-      datalist.innerHTML = playerUsernames.map(name => `<option value="${name}"></option>`).join('');
+      const select = document.getElementById('playerSelect');
+      select.innerHTML = `<option value="">Select player...</option>` +
+        playerUsernames.map(name => `<option value="${name}">${name}</option>`).join('');
     });
 
   // Set active player handler
   document.getElementById('setActivePlayerBtn').onclick = async () => {
-    const playerName = document.getElementById('playerSelect').value.trim();
+    const select = document.getElementById('playerSelect');
+    const playerName = select.value;
     const statusDiv = document.getElementById('activePlayerStatus');
     if (!playerName) {
       statusDiv.innerHTML = '<span style="color: orange;">Please select a player first.</span>';
-      return;
-    }
-    if (!playerUsernames.includes(playerName)) {
-      statusDiv.innerHTML = '<span style="color: orange;">Player not found. Please select from the dropdown.</span>';
-      setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
       return;
     }
     statusDiv.innerHTML = '<span style="color: blue;">Setting active player...</span>';
@@ -1277,4 +1276,5 @@ if (!loggedIn) {
   renderLogin();
 } else {
   renderMainMenu();
+}
 }
