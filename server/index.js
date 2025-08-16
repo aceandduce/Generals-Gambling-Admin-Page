@@ -616,16 +616,16 @@ app.post('/api/swap-sheet-fallback', async (req, res) => {
 
 // Set active player endpoint
 app.post('/api/set-active-player', async (req, res) => {
-  const { playerName, adminUsername } = req.body;
+  const { playerName } = req.body;
   try {
     // Get all player usernames from the Players sheet
-    const players = await getPlayersFromSheet(); // Implement this helper to read column A
+    const players = await getPlayersFromSheet();
     const usernames = players.map(p => p.username);
     if (!usernames.includes(playerName)) {
       return res.status(400).json({ success: false, message: 'Player not found' });
     }
-    // Call Google Apps Script function setActivePlayer(playerName)
-    const scriptResponse = await callGoogleAppsScript('setActivePlayer', { playerName, adminUsername });
+    // Only send playerName to Apps Script
+    const scriptResponse = await callGoogleAppsScript('setActivePlayer', { playerName });
     if (scriptResponse.success) {
       res.json({ success: true });
     } else {
@@ -652,12 +652,26 @@ async function getPlayersFromSheet() {
 
 // Helper to call Google Apps Script
 async function callGoogleAppsScript(functionName, params) {
-  // ...existing code for calling Apps Script...
-  // Example:
-  // const response = await fetch('YOUR_APPS_SCRIPT_URL', { ... });
-  // return await response.json();
-  // For now, mock success:
-  return { success: true };
+  // Replace with your deployed Apps Script web app URL
+  const scriptUrl = process.env.APPS_SCRIPT_URL; // e.g. 'https://script.google.com/macros/s/AKfycb.../exec'
+  if (!scriptUrl) {
+    throw new Error('Apps Script URL not configured');
+  }
+  // Send function name and params as POST body
+  const response = await fetch(scriptUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      function: functionName,
+      parameters: params
+    })
+  });
+  if (!response.ok) {
+    return { success: false, message: 'Apps Script call failed' };
+  }
+  const data = await response.json();
+  // Expect { success: true } from your Apps Script
+  return data;
 }
 
 // GET /api/players - returns [{ username: ... }, ...] from Players sheet column A
