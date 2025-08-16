@@ -180,10 +180,11 @@ function renderMainMenu() {
 
       <!-- Player Selection Section -->
       <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.07); border-radius: 8px;">
-        <label for="playerSelect" style="display: block; margin-bottom: 0.5rem; color: #fff; font-weight: bold;">Set Active Player:</label>
-        <select id="playerSelect" style="width:100%; padding:0.5rem; border-radius:5px; border:1px solid #444; background:#333; color:#fff;">
-          <option value="">Loading players...</option>
-        </select>
+        <label for="playerSelectInput" style="display: block; margin-bottom: 0.5rem; color: #fff; font-weight: bold;">Set Active Player:</label>
+        <div style="position:relative;">
+          <input id="playerSelectInput" type="text" autocomplete="off" placeholder="Type player name..." style="width:100%; padding:0.5rem; border-radius:5px; border:1px solid #444; background:#333; color:#fff;" />
+          <ul id="playerSuggestions" style="position:absolute; left:0; right:0; top:100%; background:#222; color:#fff; border:1px solid #444; border-radius:5px; margin:0; padding:0; list-style:none; z-index:10; max-height:150px; overflow-y:auto; display:none;"></ul>
+        </div>
         <button id="setActivePlayerBtn" class="menu-button" style="width:100%; margin-top:0.5rem;">Set Active Player</button>
         <div id="activePlayerStatus" style="margin-top:0.5rem; font-size:0.9em;"></div>
       </div>
@@ -206,23 +207,56 @@ function renderMainMenu() {
   document.getElementById('logoutBtn').onclick = () => { loggedIn = false; loggedInUsername = ''; currentPage = 'menu'; renderLogin(); };
   document.getElementById('swapSheetBtn').onclick = handleSheetSwap;
 
-  // Fetch player names for dropdown
+  // Fetch player names for predictive input
   fetch(`${backendUrl}/api/players`)
     .then(res => res.json())
     .then(players => {
       playerUsernames = players.map(p => p.username);
-      const select = document.getElementById('playerSelect');
-      select.innerHTML = `<option value="">Select player...</option>` +
-        playerUsernames.map(name => `<option value="${name}">${name}</option>`).join('');
     });
+
+  // Predictive input logic
+  const input = document.getElementById('playerSelectInput');
+  const suggestions = document.getElementById('playerSuggestions');
+  input.addEventListener('input', function() {
+    const val = input.value.trim().toLowerCase();
+    if (!val) {
+      suggestions.style.display = 'none';
+      suggestions.innerHTML = '';
+      return;
+    }
+    const filtered = playerUsernames.filter(name => name.toLowerCase().includes(val));
+    if (filtered.length === 0) {
+      suggestions.style.display = 'none';
+      suggestions.innerHTML = '';
+      return;
+    }
+    suggestions.innerHTML = filtered.map(name => `<li style="padding:8px; cursor:pointer;">${name}</li>`).join('');
+    suggestions.style.display = 'block';
+  });
+  // Click suggestion to fill input
+  suggestions.addEventListener('mousedown', function(e) {
+    if (e.target.tagName === 'LI') {
+      input.value = e.target.textContent;
+      suggestions.style.display = 'none';
+      suggestions.innerHTML = '';
+    }
+  });
+  // Hide suggestions on blur (with slight delay for click)
+  input.addEventListener('blur', () => setTimeout(() => {
+    suggestions.style.display = 'none';
+  }, 100));
 
   // Set active player handler
   document.getElementById('setActivePlayerBtn').onclick = async () => {
-    const select = document.getElementById('playerSelect');
-    const playerName = select.value;
+    const playerName = input.value.trim();
     const statusDiv = document.getElementById('activePlayerStatus');
     if (!playerName) {
       statusDiv.innerHTML = '<span style="color: orange;">Please select a player first.</span>';
+      return;
+    }
+    if (!playerUsernames.includes(playerName)) {
+      statusDiv.innerHTML = '<span style="color: orange;">Player not found. Please select from the list.</span>';
+      setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
       return;
     }
     statusDiv.innerHTML = '<span style="color: blue;">Setting active player...</span>';
