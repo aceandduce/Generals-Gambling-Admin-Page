@@ -627,7 +627,8 @@ app.post('/api/set-active-player', async (req, res) => {
     }
     // Only send playerName to Apps Script
     const scriptResponse = await callGoogleAppsScript('setActivePlayer', { playerName });
-    if
+    if (scriptResponse.success) {
+      res.json({ success: true });
     } else {
       res.status(400).json({ success: false, message: 'Script failed' });
     }
