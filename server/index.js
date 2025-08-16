@@ -662,7 +662,7 @@ async function callGoogleAppsScript(functionName, params) {
 app.get('/api/players', async (req, res) => {
   try {
     const sheets = getSheetsClient();
-    // Read all usernames from column A (skip header)
+    // Read all usernames from column A, skipping header
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
       range: `${SHEET_NAME}!A2:A`,
@@ -672,10 +672,10 @@ app.get('/api/players', async (req, res) => {
     const usernames = values
       .map(row => row[0])
       .filter(name => !!name)
-      .map(username => ({ username }));
+      .map(name => ({ username: name }));
     res.json(usernames);
   } catch (err) {
-    console.error('Error fetching players:', err);
+    console.error('Error in /api/players:', err);
     res.status(500).json({ error: 'Failed to fetch players' });
   }
 });
