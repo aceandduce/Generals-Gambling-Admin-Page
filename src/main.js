@@ -224,7 +224,8 @@ function renderMainMenu() {
       suggestions.innerHTML = '';
       return;
     }
-    const filtered = playerUsernames.filter(name => name.toLowerCase().includes(val));
+    // Only show usernames that start with the typed value
+    const filtered = playerUsernames.filter(name => name.toLowerCase().startsWith(val));
     if (filtered.length === 0) {
       suggestions.style.display = 'none';
       suggestions.innerHTML = '';
