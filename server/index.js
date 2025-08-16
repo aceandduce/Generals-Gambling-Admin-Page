@@ -619,20 +619,27 @@ app.post('/api/swap-sheet-fallback', async (req, res) => {
 app.post('/api/set-active-player', async (req, res) => {
   const { playerName } = req.body;
   try {
-    // Get all player usernames from the Players sheet
     const players = await getPlayersFromSheet();
     const usernames = players.map(p => p.username);
     if (!usernames.includes(playerName)) {
       return res.status(400).json({ success: false, message: 'Player not found' });
     }
     // Only send playerName to Apps Script
-    const scriptResponse = await callGoogleAppsScript('setActivePlayer', { playerName });
-    if (scriptResponse.success) {
+    let scriptResponse;
+    try {
+      scriptResponse = await callGoogleAppsScript('setActivePlayer', { playerName });
+    } catch (err) {
+      console.error('Apps Script call error:', err);
+      return res.status(500).json({ success: false, message: 'Apps Script call failed' });
+    }
+    if (scriptResponse && scriptResponse.success) {
       res.json({ success: true });
     } else {
-      res.status(400).json({ success: false, message: 'Script failed' });
+      console.error('Apps Script response:', scriptResponse);
+      res.status(400).json({ success: false, message: scriptResponse?.message || 'Script failed' });
     }
   } catch (err) {
+    console.error('Set active player error:', err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
