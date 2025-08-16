@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { google } = require('googleapis');
+const fetch = require('node-fetch'); // Add this at the top with other requires
 require('dotenv').config();
 
 const app = express();
@@ -626,8 +627,7 @@ app.post('/api/set-active-player', async (req, res) => {
     }
     // Only send playerName to Apps Script
     const scriptResponse = await callGoogleAppsScript('setActivePlayer', { playerName });
-    if (scriptResponse.success) {
-      res.json({ success: true });
+    if
     } else {
       res.status(400).json({ success: false, message: 'Script failed' });
     }
