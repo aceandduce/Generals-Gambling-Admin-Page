@@ -658,6 +658,28 @@ async function callGoogleAppsScript(functionName, params) {
   return { success: true };
 }
 
+// GET /api/players - returns [{ username: ... }, ...] from Players sheet column A
+app.get('/api/players', async (req, res) => {
+  try {
+    // Replace with your actual Google Sheets API logic
+    // Example using googleapis:
+    // const sheetId = 'YOUR_SHEET_ID';
+    // const range = 'Players!A:A';
+    // const response = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range });
+    // const usernames = response.data.values.map(row => ({ username: row[0] })).filter(u => u.username);
+    // res.json(usernames);
+
+    // For now, mock data:
+    res.json([
+      { username: 'john_doe' },
+      { username: 'jane_smith' },
+      { username: 'player123' }
+    ]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch players' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
